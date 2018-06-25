@@ -867,9 +867,9 @@ void DFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
           cache_hit++;
           MLC_opagemap[blkno].map_age++;
           if(MLC_opagemap[blkno].map_status==MAP_GHOST){
-              DFTL_Hit_Ghost_CMT();
+              DFTL_Hit_Ghost_CMT(blkno);
           }else if(MLC_opagemap[blkno].map_status==MAP_REAL){
-              DFTL_Hit_Real_CMT();
+              DFTL_Hit_Real_CMT(blkno);
           }else{
             // debug
             printf("forbidden/shouldnt happen real =%d , ghost =%d\n",MAP_REAL,MAP_GHOST);
@@ -881,7 +881,7 @@ void DFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
           DFTL_Real_CMT_Full();
           //  read entry into REAL
           flash_hit++;
-          send_flash_request(((blkno-MLC_page_num_for_2nd_map_table)/MLC_MAP_ENTRIES_PER_PAGE)*8,8,1,2);
+          send_flash_request(((blkno-MLC_page_num_for_2nd_map_table)/MLC_MAP_ENTRIES_PER_PAGE)*8,8,1,2,1);
           translation_read_num++;
           MLC_opagemap[blkno].map_status=MAP_REAL;
           MLC_opagemap[blkno].map_age=opagemap[real_max].map_age+1;
@@ -904,7 +904,7 @@ void DFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
         }else{
           read_count++;
         }
-        send_flash_request(blkno*8,8,operation,1);
+        send_flash_request(blkno*8,8,operation,1,1);
         blkno++;
       } 
   }
