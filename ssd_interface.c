@@ -112,6 +112,7 @@ unsigned int total_num_of_req = 0;
  ***********************************************************************/
 int real_min = -1;
 int real_max = 0;
+int ghost_min=-1;
 /*
 int second_min = -1;
 int second_max = 0;
@@ -517,14 +518,36 @@ int MLC_find_real_min()
   int temp = 99999999;
 
   for(i=0; i < MAP_REAL_MAX_ENTRIES; i++) {
+    if(real_arr[i]>0){
         if(MLC_opagemap[real_arr[i]].map_age <= temp) {
             real_min = real_arr[i];
             temp = MLC_opagemap[real_arr[i]].map_age;
             index = i;
         }
+    }
+
   }
   return real_min;    
 }
+
+
+int MLC_find_ghost_min()
+{
+  int i,index; 
+  int temp = 99999999;
+  for(i=0; i < MAP_GHOST_MAX_ENTRIES; i++) {
+    if(ghost_arr[i]>0){
+        if(MLC_opagemap[ghost_arr[i]].map_age <= temp) {
+            ghost_min = ghost_arr[i];
+            temp = MLC_opagemap[ghost_arr[i]].map_age;
+            index = i;
+        }
+    }
+
+  }
+  return ghost_min; 
+}
+
 
 void init_arr()
 {
@@ -534,13 +557,15 @@ void init_arr()
       real_arr[i] = 0;
   }
   for( i= 0; i < MAP_SEQ_MAX_ENTRIES; i++) {
-	  seq_arr[i] = 0;
+	  seq_arr[i] = -1;
   }
   for( i = 0; i < MAP_SECOND_MAX_ENTRIES; i++){
-	  second_arr[i] = 0;
+	  second_arr[i] = -1;
   }
   for( i = 0; i < CACHE_MAX_ENTRIES; i++) {
       cache_arr[i] = -1;
+
+
   }
 /*
   //设置翻译页，一个翻译页最多可以存储512个映射项
@@ -577,7 +602,7 @@ int find_free_pos( int *arr, int size)
 {
     int i;
     for(i = 0 ; i < size; i++) {
-        if(arr[i] == 0) {   //可以改成 if ( *(arr + i ) == 0),  arr[i]和 *(arr+i) 是两个等价
+        if(arr[i] == -1) {   //可以改成 if ( *(arr + i ) == 0),  arr[i]和 *(arr+i) 是两个等价
             return i;
         }
     } 
@@ -788,6 +813,18 @@ void SecnoToPageno(int secno,int scount,int *blkno,int *bcount,int flash_flag)
 /***********************************************************************
  *                    DFTL  主函数逻辑实现
  ***********************************************************************/ 
+void DFTL_init_arr()
+{
+  int i;
+  for( i= 0; i< MAP_GHOST_MAX_ENTRIES;i++){
+    ghost_arr[i] = -1;
+  }
+
+  for( i = 0; i < MAP_REAL_MAX_ENTRIES; i++) {
+      real_arr[i] = 0;
+  }
+}
+
 void DFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
 {
   int blkno=(*pageno),cnt=(*req_size);
@@ -821,11 +858,7 @@ void DFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
           real_arr=(int *)malloc(sizeof(int)*MAP_REAL_MAX_ENTRIES);
           MAP_GHOST_MAX_ENTRIES=822;
           ghost_arr=(int *)malloc(sizeof(int)*MAP_GHOST_MAX_ENTRIES);
-          // MAP_SEQ_MAX_ENTRIES=1536; 
-          // seq_arr=(int *)malloc(sizeof(int)*MAP_SEQ_MAX_ENTRIES); 
-          // MAP_SECOND_MAX_ENTRIES=2560; 
-          // second_arr=(int *)malloc(sizeof(int)*MAP_SECOND_MAX_ENTRIES); 
-          init_arr();                             
+          DFTL_init_arr();                             
         }
         
         rqst_cnt++;
@@ -855,6 +888,12 @@ void DFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
           real_max=blkno;
           MAP_REAL_NUM_ENTRIES++;
           pos=find_free_pos(real_arr,MAP_REAL_MAX_ENTRIES);
+          // debug
+          if(pos == -1){
+            printf("can not find free pos in real_arr for %d LPN",blkno);
+            assert(0);
+          }
+          real_arr[pos]=-1;
           real_arr[pos]=blkno;
         }
 
@@ -869,6 +908,9 @@ void DFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
         blkno++;
       } 
   }
+
+  (*pageno)=blkno;
+  (*req_size)=cnt;
 }
 
 /********************************************************
@@ -1094,7 +1136,7 @@ void Hit_SCMT_Entry(int blkno,int operation)
 						MLC_opagemap[blkno].map_age = MLC_opagemap[real_max].map_age + 1;
 						real_max = blkno;      
 						pos = find_free_pos(real_arr,MAP_REAL_MAX_ENTRIES);
-						real_arr[pos] = 0;
+						real_arr[pos] = -1;
 						real_arr[pos] = blkno;
 						MAP_REAL_NUM_ENTRIES++;
 			}
@@ -1144,10 +1186,10 @@ void CMT_Is_Full()
 						//将CMT中更新的映射项剔除到SL-CMT中
 						MLC_opagemap[min_real].map_status = MAP_SECOND;
 						pos = search_table(real_arr,MAP_REAL_MAX_ENTRIES,min_real);
-						real_arr[pos]=0;
+						real_arr[pos]=-1;
 						MAP_REAL_NUM_ENTRIES--;
 						pos_2nd = find_free_pos(second_arr,MAP_SECOND_MAX_ENTRIES);
-						second_arr[pos_2nd]=0;
+						second_arr[pos_2nd]=-1;
 						second_arr[pos_2nd]=min_real;
 						MAP_SECOND_NUM_ENTRIES++;
 						//debug
@@ -1158,7 +1200,7 @@ void CMT_Is_Full()
 				}else{
 					//没有更新的直接删除
 							pos = search_table(real_arr,MAP_REAL_MAX_ENTRIES,min_real);
-							real_arr[pos]=0;
+							real_arr[pos]=-1;
 							MLC_opagemap[min_real].map_status = MAP_INVALID;
 							MLC_opagemap[min_real].map_age = 0;
 							MAP_REAL_NUM_ENTRIES--;
@@ -1284,10 +1326,10 @@ void pre_load_entry_into_SCMT(int *pageno,int *req_size,int operation)
 									}
 									MLC_opagemap[min_real].map_status = MAP_SECOND;
 									pos = search_table(real_arr,MAP_REAL_MAX_ENTRIES,min_real);
-									real_arr[pos]=0;
+									real_arr[pos]=-1;
 									MAP_REAL_NUM_ENTRIES--;
 									pos_2nd = find_free_pos(second_arr,MAP_SECOND_MAX_ENTRIES);
-									second_arr[pos_2nd]=0;
+									second_arr[pos_2nd]=-1;
 									second_arr[pos_2nd]=min_real;
 									MAP_SECOND_NUM_ENTRIES++;
 									if(MAP_SECOND_NUM_ENTRIES > MAP_SECOND_MAX_ENTRIES)
@@ -1317,7 +1359,7 @@ void pre_load_entry_into_SCMT(int *pageno,int *req_size,int operation)
 					real_max = blkno;
 
 					pos = find_free_pos(real_arr,MAP_REAL_MAX_ENTRIES);//因为real_arr已经被定义成指针变量，调用find_free_pos函数时前面不需要加*
-					real_arr[pos] = 0;
+					real_arr[pos] = -1;
 					real_arr[pos] = blkno;
 					MAP_REAL_NUM_ENTRIES++;
 					if(operation==0){
@@ -1359,7 +1401,7 @@ void req_Entry_Miss_SDFTL(int blkno,int operation)
 		real_max = blkno;
 
 		pos = find_free_pos(real_arr,MAP_REAL_MAX_ENTRIES);//因为real_arr已经被定义成指针变量，调用find_free_pos函数时前面不需要加*
-		real_arr[pos] = 0;
+		real_arr[pos] = -1;
 		real_arr[pos] = blkno;
 		MAP_REAL_NUM_ENTRIES++;
 	  if(operation==0){
