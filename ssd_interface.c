@@ -690,71 +690,71 @@ double callFsim(unsigned int secno, int scount, int operation,int flash_flag)
       big_request_count+= bcount; 
   }
 
-  switch(operation)
-  {
-    //write/read
-    case 0:
-    case 1:
-
-    while(cnt > 0)
-    {
-          cnt--;
-          itemcount++;
-        // page based FTL
-        if(ftl_type == 1){
-          send_flash_request(blkno*4, 4, operation, 1,0); 
-          blkno++;
-        }
-
-        // blck based FTL
-        else if(ftl_type == 2){
-          send_flash_request(blkno*4, 4, operation, 1,0); 
-          blkno++;
-        }
-
-        // opagemap ftl scheme
-        else if(ftl_type == 3)
-        {
-            SDFTL_Scheme(&blkno,&cnt,operation,flash_flag);
-        }
-    }
-    break;
-  }
-
+  // switch(operation)
+  // {
+  //   //write/read
+  //   case 0:
+  //   case 1:
 
   //   while(cnt > 0)
-  // {
-  //     cnt--;
-  //     itemcount++;
-  //     switch(ftl_type){
-  //       case 1:
-  //             // page based FTL
-  //             send_flash_request(blkno*4, 4, operation, 1,0); 
-  //               blkno++;
-  //             break;
-  //       case 2:
-  //             // blck based FTL
-  //             send_flash_request(blkno*4, 4, operation, 1,0); 
-  //               blkno++;
-  //             break;
-  //       case 4: 
-  //             // FAST scheme 
-  //             if(operation == 0){
-  //               write_count++;
-  //               }
-  //               else {
-  //                 read_count++;
-  //               }
-  //               send_flash_request(blkno*4, 4, operation, 1,0); //cache_min is a page for page baseed FTL
-  //               blkno++;
-  //             break;
-  //       case 3:
-  //             // SDFTL scheme
-  //             SDFTL_Scheme(&blkno,&cnt,operation,flash_flag);
-  //             break;
-  //       }//end-switch
+  //   {
+  //         cnt--;
+  //         itemcount++;
+  //       // page based FTL
+  //       if(ftl_type == 1){
+  //         send_flash_request(blkno*4, 4, operation, 1,0); 
+  //         blkno++;
+  //       }
 
-  // }//end-while
+  //       // blck based FTL
+  //       else if(ftl_type == 2){
+  //         send_flash_request(blkno*4, 4, operation, 1,0); 
+  //         blkno++;
+  //       }
+
+  //       // opagemap ftl scheme
+  //       else if(ftl_type == 3)
+  //       {
+  //           SDFTL_Scheme(&blkno,&cnt,operation,flash_flag);
+  //       }
+  //   }
+  //   break;
+  // }
+
+
+  while(cnt > 0)
+  {
+      cnt--;
+      itemcount++;
+      switch(ftl_type){
+        case 1:
+              // page based FTL
+              send_flash_request(blkno*4, 4, operation, 1,0); 
+                blkno++;
+              break;
+        case 2:
+              // blck based FTL
+              send_flash_request(blkno*4, 4, operation, 1,0); 
+                blkno++;
+              break;
+        case 4: 
+              // FAST scheme 
+              if(operation == 0){
+                write_count++;
+                }
+                else {
+                  read_count++;
+                }
+                send_flash_request(blkno*4, 4, operation, 1,0); //cache_min is a page for page baseed FTL
+                blkno++;
+              break;
+        case 3:
+              // SDFTL scheme
+              SDFTL_Scheme(&blkno,&cnt,operation,flash_flag);
+              break;
+        }//end-switch
+
+  }//end-while
 
 
   // 计算对应的时延
