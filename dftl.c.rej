@@ -1,0 +1,152 @@
+*** dftl.c	2009-06-15 07:05:37.000000000 +0200
+--- dftl.c	2010-03-24 17:11:12.000000000 +0100
+***************
+*** 66,82 ****
+    int i;
+    int lpn = lsn/SECT_NUM_PER_PAGE; // logical page number
+    int size_page = size/SECT_NUM_PER_PAGE; // size in page 
+  
+    sect_t s_lsn;	// starting logical sector number
+    sect_t s_psn; // starting physical sector number 
+  
+    ASSERT(lpn < opagemap_num);
+    ASSERT(lpn + size_page <= opagemap_num);
+  
+-   sect_t lsns[SECT_NUM_PER_PAGE];
+    memset (lsns, 0xFF, sizeof (lsns));
+  
+!   int sect_num = (size < SECT_NUM_PER_PAGE) ? size : SECT_NUM_PER_PAGE;
+  
+    if(mapdir_flag == 2){
+      s_psn = mapdir[lpn].ppn * SECT_NUM_PER_PAGE;
+--- 66,84 ----
+    int i;
+    int lpn = lsn/SECT_NUM_PER_PAGE; // logical page number
+    int size_page = size/SECT_NUM_PER_PAGE; // size in page 
++   int sect_num;
+  
+    sect_t s_lsn;	// starting logical sector number
+    sect_t s_psn; // starting physical sector number 
+  
++   sect_t lsns[SECT_NUM_PER_PAGE];
++ 
+    ASSERT(lpn < opagemap_num);
+    ASSERT(lpn + size_page <= opagemap_num);
+  
+    memset (lsns, 0xFF, sizeof (lsns));
+  
+!   sect_num = (size < SECT_NUM_PER_PAGE) ? size : SECT_NUM_PER_PAGE;
+  
+    if(mapdir_flag == 2){
+      s_psn = mapdir[lpn].ppn * SECT_NUM_PER_PAGE;
+***************
+*** 120,129 ****
+    int i,z, j,m,q, benefit = 0;
+    int k,old_flag,temp_arr[PAGE_NUM_PER_BLK],temp_arr1[PAGE_NUM_PER_BLK],map_arr[PAGE_NUM_PER_BLK]; 
+    int valid_flag,pos;
+-   victim_blk_no = opm_gc_cost_benefit();
+  
+    _u32 copy_lsn[SECT_NUM_PER_PAGE], copy[SECT_NUM_PER_PAGE];
+    _u16 valid_sect_num,  l, s;
+    memset(copy_lsn, 0xFF, sizeof (copy_lsn));
+  
+    s = k = OFF_F_SECT(free_page_no[small]);
+--- 122,132 ----
+    int i,z, j,m,q, benefit = 0;
+    int k,old_flag,temp_arr[PAGE_NUM_PER_BLK],temp_arr1[PAGE_NUM_PER_BLK],map_arr[PAGE_NUM_PER_BLK]; 
+    int valid_flag,pos;
+  
+    _u32 copy_lsn[SECT_NUM_PER_PAGE], copy[SECT_NUM_PER_PAGE];
+    _u16 valid_sect_num,  l, s;
++ 
++   victim_blk_no = opm_gc_cost_benefit();
+    memset(copy_lsn, 0xFF, sizeof (copy_lsn));
+  
+    s = k = OFF_F_SECT(free_page_no[small]);
+***************
+*** 281,286 ****
+    int lpn = lsn/SECT_NUM_PER_PAGE; // logical page number
+    int size_page = size/SECT_NUM_PER_PAGE; // size in page 
+    int ppn;
+  
+    sect_t s_lsn;	// starting logical sector number
+    sect_t s_psn; // starting physical sector number 
+--- 284,293 ----
+    int lpn = lsn/SECT_NUM_PER_PAGE; // logical page number
+    int size_page = size/SECT_NUM_PER_PAGE; // size in page 
+    int ppn;
++   int small;
++ 
++   sect_t lsns[SECT_NUM_PER_PAGE];
++   int sect_num = SECT_NUM_PER_PAGE;
+  
+    sect_t s_lsn;	// starting logical sector number
+    sect_t s_psn; // starting physical sector number 
+***************
+*** 293,299 ****
+    s_lsn = lpn * SECT_NUM_PER_PAGE;
+  
+  
+-   int small;
+    if(mapdir_flag == 2) //map page
+      small = 0;
+    else if ( mapdir_flag == 1) //data page
+--- 300,305 ----
+    s_lsn = lpn * SECT_NUM_PER_PAGE;
+  
+  
+    if(mapdir_flag == 2) //map page
+      small = 0;
+    else if ( mapdir_flag == 1) //data page
+***************
+*** 320,328 ****
+      }
+    }
+  
+-   sect_t lsns[SECT_NUM_PER_PAGE];
+    memset (lsns, 0xFF, sizeof (lsns));
+-   int sect_num = SECT_NUM_PER_PAGE;
+    
+    s_psn = SECTOR(free_blk_no[small], free_page_no[small]);
+  
+--- 326,332 ----
+      }
+    }
+  
+    memset (lsns, 0xFF, sizeof (lsns));
+    
+    s_psn = SECTOR(free_blk_no[small], free_page_no[small]);
+  
+***************
+*** 389,394 ****
+  int opm_init(blk_t blk_num, blk_t extra_num)
+  {
+    int i;
+  
+    opagemap_num = blk_num * PAGE_NUM_PER_BLK;
+  
+--- 393,399 ----
+  int opm_init(blk_t blk_num, blk_t extra_num)
+  {
+    int i;
++   int mapdir_num;
+  
+    opagemap_num = blk_num * PAGE_NUM_PER_BLK;
+  
+***************
+*** 401,407 ****
+      return -1;
+    }
+  
+!   int mapdir_num = (opagemap_num / MAP_ENTRIES_PER_PAGE);
+  
+    if((opagemap_num % MAP_ENTRIES_PER_PAGE) != 0){
+      printf("opagemap_num % MAP_ENTRIES_PER_PAGE is not zero\n"); 
+--- 406,412 ----
+      return -1;
+    }
+  
+!   mapdir_num = (opagemap_num / MAP_ENTRIES_PER_PAGE);
+  
+    if((opagemap_num % MAP_ENTRIES_PER_PAGE) != 0){
+      printf("opagemap_num % MAP_ENTRIES_PER_PAGE is not zero\n"); 

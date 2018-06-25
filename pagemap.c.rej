@@ -1,0 +1,163 @@
+*** pagemap.c	2009-06-15 07:05:13.000000000 +0200
+--- pagemap.c	2010-03-24 16:58:38.000000000 +0100
+***************
+*** 56,72 ****
+    int i;
+    int lpn = lsn/SECT_NUM_PER_PAGE;					
+    int size_page = size/SECT_NUM_PER_PAGE;  
+  
+    sect_t s_lsn;
+    sect_t s_psn; 
+  
+    ASSERT(lpn < pagemap_num);
+    ASSERT(lpn + size_page <= pagemap_num);
+  
+!   sect_t lsns[SECT_NUM_PER_PAGE];
+    memset (lsns, 0xFF, sizeof (lsns));
+  
+!   int sect_num = (size < SECT_NUM_PER_PAGE) ? size : SECT_NUM_PER_PAGE;
+  
+    if(mapdir_flag == 2){
+      s_psn = mapdir[lpn].ppn * SECT_NUM_PER_PAGE;
+--- 56,75 ----
+    int i;
+    int lpn = lsn/SECT_NUM_PER_PAGE;					
+    int size_page = size/SECT_NUM_PER_PAGE;  
++   sect_t lsns[SECT_NUM_PER_PAGE];
+  
+    sect_t s_lsn;
+    sect_t s_psn; 
+  
++   int sect_num;
++ 
+    ASSERT(lpn < pagemap_num);
+    ASSERT(lpn + size_page <= pagemap_num);
+  
+! 
+    memset (lsns, 0xFF, sizeof (lsns));
+  
+!   sect_num = (size < SECT_NUM_PER_PAGE) ? size : SECT_NUM_PER_PAGE;
+  
+    if(mapdir_flag == 2){
+      s_psn = mapdir[lpn].ppn * SECT_NUM_PER_PAGE;
+***************
+*** 104,115 ****
+    int i, j,m, benefit = 0;
+    
+    int valid_flag;
+-   victim_blk_no = pm_gc_cost_benefit();
+  
+  
+    _u32 copy_lsn[SECT_NUM_PER_PAGE], copy[SECT_NUM_PER_PAGE];
+    _u16 valid_sect_num, k, l, s;
+  
+    memset(copy_lsn, 0xFF, sizeof (copy_lsn));
+  
+    s = k = OFF_F_SECT(free_page_no[small]);
+--- 107,119 ----
+    int i, j,m, benefit = 0;
+    
+    int valid_flag;
+  
+  
+    _u32 copy_lsn[SECT_NUM_PER_PAGE], copy[SECT_NUM_PER_PAGE];
+    _u16 valid_sect_num, k, l, s;
+  
++   victim_blk_no = pm_gc_cost_benefit();
++ 
+    memset(copy_lsn, 0xFF, sizeof (copy_lsn));
+  
+    s = k = OFF_F_SECT(free_page_no[small]);
+***************
+*** 145,161 ****
+    int lpn = lsn/SECT_NUM_PER_PAGE;					
+    int size_page = size/SECT_NUM_PER_PAGE;   	
+    int ppn;
+  
+    sect_t s_lsn;	
+    sect_t s_psn; 
+    sect_t s_psn1;
+  
+    ASSERT(lpn < pagemap_num);
+    ASSERT(lpn + size_page <= pagemap_num);
+  
+    s_lsn = lpn * SECT_NUM_PER_PAGE;
+  
+!   int small = 1;
+  
+    if (free_page_no[small] >= SECT_NUM_PER_BLK) 
+    {
+--- 149,168 ----
+    int lpn = lsn/SECT_NUM_PER_PAGE;					
+    int size_page = size/SECT_NUM_PER_PAGE;   	
+    int ppn;
++   int small;
++   int sect_num;
+  
+    sect_t s_lsn;	
+    sect_t s_psn; 
+    sect_t s_psn1;
++   sect_t lsns[SECT_NUM_PER_PAGE];;
+  
+    ASSERT(lpn < pagemap_num);
+    ASSERT(lpn + size_page <= pagemap_num);
+  
+    s_lsn = lpn * SECT_NUM_PER_PAGE;
+  
+!   small = 1;
+  
+    if (free_page_no[small] >= SECT_NUM_PER_BLK) 
+    {
+***************
+*** 173,181 ****
+      }
+    }
+  
+-   sect_t lsns[SECT_NUM_PER_PAGE];
+    memset (lsns, 0xFF, sizeof (lsns));
+!   int sect_num = SECT_NUM_PER_PAGE;
+    
+    s_psn = SECTOR(free_blk_no[small], free_page_no[small]);
+  
+--- 180,187 ----
+      }
+    }
+  
+    memset (lsns, 0xFF, sizeof (lsns));
+!   sect_num = SECT_NUM_PER_PAGE;
+    
+    s_psn = SECTOR(free_blk_no[small], free_page_no[small]);
+  
+***************
+*** 236,241 ****
+  int pm_init(blk_t blk_num, blk_t extra_num)
+  {
+    int i;
+  
+    pagemap_num = blk_num * PAGE_NUM_PER_BLK;
+  
+--- 242,248 ----
+  int pm_init(blk_t blk_num, blk_t extra_num)
+  {
+    int i;
++   int mapdir_num;
+  
+    pagemap_num = blk_num * PAGE_NUM_PER_BLK;
+  
+***************
+*** 246,252 ****
+      return -1;
+    }
+  
+!   int mapdir_num = (pagemap_num / MAP_ENTRIES_PER_PAGE);
+  
+    if((pagemap_num % MAP_ENTRIES_PER_PAGE) != 0){
+      printf("pagemap_num % MAP_ENTRIES_PER_PAGE is not zero\n"); 
+--- 253,259 ----
+      return -1;
+    }
+  
+!   mapdir_num = (pagemap_num / MAP_ENTRIES_PER_PAGE);
+  
+    if((pagemap_num % MAP_ENTRIES_PER_PAGE) != 0){
+      printf("pagemap_num % MAP_ENTRIES_PER_PAGE is not zero\n"); 

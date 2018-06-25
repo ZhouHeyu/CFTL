@@ -1,0 +1,110 @@
+*** fast.c	2009-06-15 07:06:20.000000000 +0200
+--- fast.c	2010-03-24 16:52:23.000000000 +0100
+***************
+*** 60,65 ****
+        int size_page = size/SECT_NUM_PER_PAGE;   		
+        int offset = lpn%PAGE_NUM_PER_BLK;
+        int valid_flag;
+  
+        sect_t s_lsn;	
+        sect_t s_psn; 
+--- 60,66 ----
+        int size_page = size/SECT_NUM_PER_PAGE;   		
+        int offset = lpn%PAGE_NUM_PER_BLK;
+        int valid_flag;
++       int sect_num;
+  
+        sect_t s_lsn;	
+        sect_t s_psn; 
+***************
+*** 71,77 ****
+          ASSERT(0);
+        }
+  
+!       int sect_num = 4;
+  
+        s_psn = ((BMT[lbn] * PAGE_NUM_PER_BLK + offset) * SECT_NUM_PER_PAGE);
+        s_lsn = lpn * SECT_NUM_PER_PAGE;
+--- 72,78 ----
+          ASSERT(0);
+        }
+  
+!       sect_num = 4;
+  
+        s_psn = ((BMT[lbn] * PAGE_NUM_PER_BLK + offset) * SECT_NUM_PER_PAGE);
+        s_lsn = lpn * SECT_NUM_PER_PAGE;
+***************
+*** 342,353 ****
+  
+  void merge_full(int pmt_index)  
+  {
+- 
+-     if(PMT[pmt_index].fpc != 0 && pmt_index == 0) {
+-         printf("something sucks");
+-         ASSERT(0);
+-     }
+- 
+      int i,j,k,m,h;
+      int size;
+      int old_pbn;
+--- 343,348 ----
+  
+  void merge_full(int pmt_index)  
+  {
+      int i,j,k,m,h;
+      int size;
+      int old_pbn;
+***************
+*** 357,362 ****
+      sect_t lsns[SECT_NUM_PER_PAGE];
+  
+  
+      // Check with all page in a log block 
+      for(i = 0; i<PAGE_NUM_PER_BLK; i++)
+      {
+--- 352,363 ----
+      sect_t lsns[SECT_NUM_PER_PAGE];
+  
+  
++     if(PMT[pmt_index].fpc != 0 && pmt_index == 0) {
++         printf("something sucks");
++         ASSERT(0);
++     }
++ 
++ 
+      // Check with all page in a log block 
+      for(i = 0; i<PAGE_NUM_PER_BLK; i++)
+      {
+***************
+*** 864,869 ****
+  /********************* INIT **********************************/ 
+  int lm_init(blk_t blk_num, blk_t extra_num)   
+  {
+    total_blk_num = blk_num;
+    BMT = (int *)malloc(sizeof(int) * blk_num);
+    PMT = (struct LogMap*)malloc(sizeof(struct LogMap)*extra_num);
+--- 865,872 ----
+  /********************* INIT **********************************/ 
+  int lm_init(blk_t blk_num, blk_t extra_num)   
+  {
++   int i;
++ 
+    total_blk_num = blk_num;
+    BMT = (int *)malloc(sizeof(int) * blk_num);
+    PMT = (struct LogMap*)malloc(sizeof(struct LogMap)*extra_num);
+***************
+*** 872,878 ****
+    if ((BMT== NULL) || (PMT == NULL)) { return -1; }
+  
+    memset(BMT, -1, sizeof(int) * blk_num);
+-   int i;
+    for(i = 0; i < total_log_blk_num; i++){
+      PMT[i].pbn = -1;
+      PMT[i].fpc = PAGE_NUM_PER_BLK;
+--- 875,880 ----
+    if ((BMT== NULL) || (PMT == NULL)) { return -1; }
+  
+    memset(BMT, -1, sizeof(int) * blk_num);
+    for(i = 0; i < total_log_blk_num; i++){
+      PMT[i].pbn = -1;
+      PMT[i].fpc = PAGE_NUM_PER_BLK;

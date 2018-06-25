@@ -1,0 +1,112 @@
+*** flash.c	2009-06-15 07:04:36.000000000 +0200
+--- flash.c	2010-03-24 16:56:27.000000000 +0100
+***************
+*** 93,98 ****
+  /**************** NAND INIT **********************/
+  int nand_init (_u32 blk_num, _u8 min_free_blk_num)
+  {
+    nand_end();
+  
+    nand_blk = (struct nand_blk_info *)malloc(sizeof (struct nand_blk_info) * blk_num);
+--- 93,101 ----
+  /**************** NAND INIT **********************/
+  int nand_init (_u32 blk_num, _u8 min_free_blk_num)
+  {
++   _u32 blk_no;
++   int i;
++ 
+    nand_end();
+  
+    nand_blk = (struct nand_blk_info *)malloc(sizeof (struct nand_blk_info) * blk_num);
+***************
+*** 103,109 ****
+    }
+    memset(nand_blk, 0xFF, sizeof (struct nand_blk_info) * blk_num);
+  
+-   _u32 blk_no;
+    
+    nand_blk_num = blk_num;
+  
+--- 106,111 ----
+    }
+    memset(nand_blk, 0xFF, sizeof (struct nand_blk_info) * blk_num);
+  
+    
+    nand_blk_num = blk_num;
+  
+***************
+*** 116,122 ****
+      nand_blk[blk_no].ipc = 0;
+      nand_blk[blk_no].lwn = -1;
+  
+!     int i;
+      for(i = 0; i<SECT_NUM_PER_BLK; i++){
+        nand_blk[blk_no].sect[i].free = 1;
+        nand_blk[blk_no].sect[i].valid = 0;
+--- 118,124 ----
+      nand_blk[blk_no].ipc = 0;
+      nand_blk[blk_no].lwn = -1;
+  
+! 
+      for(i = 0; i<SECT_NUM_PER_BLK; i++){
+        nand_blk[blk_no].sect[i].free = 1;
+        nand_blk[blk_no].sect[i].valid = 0;
+***************
+*** 326,331 ****
+  /**************** NAND BLOCK ERASE **********************/
+  void nand_erase (_u32 blk_no)
+  {
+    ASSERT(blk_no < nand_blk_num);
+  
+    ASSERT(nand_blk[blk_no].fpc <= SECT_NUM_PER_BLK);
+--- 328,335 ----
+  /**************** NAND BLOCK ERASE **********************/
+  void nand_erase (_u32 blk_no)
+  {
++   int i;
++ 
+    ASSERT(blk_no < nand_blk_num);
+  
+    ASSERT(nand_blk[blk_no].fpc <= SECT_NUM_PER_BLK);
+***************
+*** 340,346 ****
+    nand_blk[blk_no].ipc = 0;
+    nand_blk[blk_no].lwn = -1;
+  
+!   int i;
+    for(i = 0; i<SECT_NUM_PER_BLK; i++){
+      nand_blk[blk_no].sect[i].free = 1;
+      nand_blk[blk_no].sect[i].valid = 0;
+--- 344,350 ----
+    nand_blk[blk_no].ipc = 0;
+    nand_blk[blk_no].lwn = -1;
+  
+! 
+    for(i = 0; i<SECT_NUM_PER_BLK; i++){
+      nand_blk[blk_no].sect[i].free = 1;
+      nand_blk[blk_no].sect[i].valid = 0;
+***************
+*** 385,395 ****
+  _u32 nand_get_free_blk (int isGC) 
+  {
+    _u32 blk_no = -1, i;
+-   MIN_ERASE = 9999999;
+    int flag = 0,flag1=0;
+    flag = 0;
+    flag1 = 0;
+  
+    //in case that there is no avaible free block -> GC should be called !
+    if ((isGC == 0) && (min_fb_num >= free_blk_num)) {
+      //printf("min_fb_num: %d\n", min_fb_num);
+--- 389,399 ----
+  _u32 nand_get_free_blk (int isGC) 
+  {
+    _u32 blk_no = -1, i;
+    int flag = 0,flag1=0;
+    flag = 0;
+    flag1 = 0;
+  
++   MIN_ERASE = 9999999;
+    //in case that there is no avaible free block -> GC should be called !
+    if ((isGC == 0) && (min_fb_num >= free_blk_num)) {
+      //printf("min_fb_num: %d\n", min_fb_num);

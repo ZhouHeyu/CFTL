@@ -1,0 +1,40 @@
+*** disksim_logorg.c	2009-06-15 01:05:35.000000000 +0200
+--- disksim_logorg.c	2010-03-24 16:55:03.000000000 +0100
+***************
+*** 710,718 ****
+    double flash_resp;
+  
+    double int_arr;
+-   curr_req_arr = curr->time;
+-   int_arr = curr_req_arr - old_req_arr;
+-   old_req_arr = curr_req_arr;
+  
+    int rw_flag = (curr->flags & READ);
+    double prev_dev_serv_time = DEVICE_SERVICE_TIME;
+--- 710,715 ----
+    double flash_resp;
+  
+    double int_arr;
+  
+    int rw_flag = (curr->flags & READ);
+    double prev_dev_serv_time = DEVICE_SERVICE_TIME;
+***************
+*** 724,729 ****
+      seq_flag = 1;
+    else seq_flag = 0;
+  
+    flash_resp = F_COEFF_INTARR_T * int_arr + F_COEFF_RW_T * rw_flag + 
+      F_COEFF_SEQ_T * seq_flag + F_COEFF_DS_PREV_T * prev_dev_serv_time + 
+      F_COEFF_REQ_SIZE_T * req_size + F_INTERCEPT;
+--- 721,731 ----
+      seq_flag = 1;
+    else seq_flag = 0;
+  
++   curr_req_arr = curr->time;
++   int_arr = curr_req_arr - old_req_arr;
++   old_req_arr = curr_req_arr;
++ 
++ 
+    flash_resp = F_COEFF_INTARR_T * int_arr + F_COEFF_RW_T * rw_flag + 
+      F_COEFF_SEQ_T * seq_flag + F_COEFF_DS_PREV_T * prev_dev_serv_time + 
+      F_COEFF_REQ_SIZE_T * req_size + F_INTERCEPT;

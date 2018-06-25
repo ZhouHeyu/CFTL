@@ -1,0 +1,63 @@
+*** syssim_driver.c	2009-06-15 00:08:52.000000000 +0200
+--- syssim_driver.c	2010-03-24 16:59:24.000000000 +0100
+***************
+*** 139,144 ****
+  
+    int test_encapsulation;
+    char outfile2[81];
+  
+    //if (argc != 5 || (nsectors = atoi(argv[3])) <= 0) {
+    if (argc != 6 || (nsectors = atoi(argv[3])) <= 0) {
+--- 139,153 ----
+  
+    int test_encapsulation;
+    char outfile2[81];
++ 
++   //youkim
++   FILE *fp = fopen(argv[5], "r");
++   double time;
++   int devno, bcount, flags;
++   unsigned int blkno;
++   char buffer[80];
++   unsigned int cnt = 0;
++   int BLOCKSIZE = 512;
+  
+    //if (argc != 5 || (nsectors = atoi(argv[3])) <= 0) {
+    if (argc != 6 || (nsectors = atoi(argv[3])) <= 0) {
+***************
+*** 169,180 ****
+  
+  
+    //youkim
+-   FILE *fp = fopen(argv[5], "r");
+-   double time;
+-   int devno, bcount, flags;
+-   unsigned int blkno;
+-   char buffer[80];
+-   unsigned int cnt = 0;
+            
+    while((fgets(buffer, sizeof(buffer), fp)) && (cnt < 10000)){  
+      cnt++;
+--- 178,183 ----
+  
+  
+    //youkim
+            
+    while((fgets(buffer, sizeof(buffer), fp)) && (cnt < 10000)){  
+      cnt++;
+***************
+*** 185,191 ****
+      req.devno= 0;
+  
+      req.blkno = blkno;
+-     int BLOCKSIZE = 512;
+      req.bytecount = BLOCKSIZE * bcount;
+      completed = 0;
+  
+--- 188,193 ----
+      req.devno= 0;
+  
+      req.blkno = blkno;
+      req.bytecount = BLOCKSIZE * bcount;
+      completed = 0;
+  
