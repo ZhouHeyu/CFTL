@@ -554,7 +554,7 @@ void init_arr()
 
   int i;
   for( i = 0; i < MAP_REAL_MAX_ENTRIES; i++) {
-      real_arr[i] = 0;
+      real_arr[i] = -1;
   }
   for( i= 0; i < MAP_SEQ_MAX_ENTRIES; i++) {
 	  seq_arr[i] = -1;
@@ -589,7 +589,7 @@ int search_table(int *arr, int size, int val) //等价于 int search_table(int a
 
     printf("shouldnt come here for search_table()=%d,%d",val,size);
     for( i = 0; i < size; i++) {
-      if(arr[i] != 0) {
+      if(arr[i] != -1) {
         printf("arr[%d]=%d ",i,arr[i]);
       }
     }
