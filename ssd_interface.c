@@ -1153,7 +1153,8 @@ void SecnoToPageno(int secno,int scount,int *blkno,int *bcount,int flash_flag)
 						if(flash_flag==0){ 
 						   *blkno = secno / 4;
 						   *bcount = (secno + scount -1)/4 - (secno)/4 + 1;
-						   SLC_write_page_count+=(*bcount);
+              //  CFTL的SLC只是简单的循环循环队列在这没有做统计
+						  //  SLC_write_page_count+=(*bcount);
 						}
 						else{
 						   *blkno = secno / 8;
