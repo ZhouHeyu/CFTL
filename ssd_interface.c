@@ -81,7 +81,7 @@ int big_request_count = 0;
 
 
 int MAP_REAL_MAX_ENTRIES=0;
-//int MAP_GHOST_MAX_ENTRIES=0;
+int MAP_GHOST_MAX_ENTRIES=0;
 int MAP_SEQ_MAX_ENTRIES=0; 
 int MAP_SECOND_MAX_ENTRIES=0; 
 int *real_arr= NULL;
@@ -928,10 +928,10 @@ void DFTL_Ghost_CMT_Full()
         // update_reqd++;
         MLC_opagemap[ghost_min].update=0;
         // read from 2nd mapping table then update it
-        send_flash_request(((ghost_min-MLC_page_num_for_2nd_map_table)/MLC_MAP_ENTRIES_PER_PAGE)*8,8,1,2);
+        send_flash_request(((ghost_min-MLC_page_num_for_2nd_map_table)/MLC_MAP_ENTRIES_PER_PAGE)*8,8,1,2,1);
         translation_read_num++;
         // write into 2nd mapping table 
-        send_flash_request(((ghost_min-MLC_page_num_for_2nd_map_table)/MLC_MAP_ENTRIES_PER_PAGE)*8,8,0,2);
+        send_flash_request(((ghost_min-MLC_page_num_for_2nd_map_table)/MLC_MAP_ENTRIES_PER_PAGE)*8,8,0,2,1);
         translation_write_num++;
       }
       MLC_opagemap[ghost_min].map_status==MAP_INVALID;
