@@ -150,6 +150,7 @@ void DFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag);
 /********************************************************
  *         author:zhoujie     DFTL 封装的相关函数
  * *******************************************************/
+void DFTL_init_arr();
 void DFTL_Ghost_CMT_Full();
 void DFTL_Real_CMT_Full();
 void DFTL_Hit_Ghost_CMT(int blkno);
@@ -554,16 +555,16 @@ void init_arr()
 
   int i;
   for( i = 0; i < MAP_REAL_MAX_ENTRIES; i++) {
-      real_arr[i] = -1;
+      real_arr[i] = 0;
   }
   for( i= 0; i < MAP_SEQ_MAX_ENTRIES; i++) {
-	  seq_arr[i] = -1;
+	  seq_arr[i] = 0;
   }
   for( i = 0; i < MAP_SECOND_MAX_ENTRIES; i++){
-	  second_arr[i] = -1;
+	  second_arr[i] = 0;
   }
   for( i = 0; i < CACHE_MAX_ENTRIES; i++) {
-      cache_arr[i] = -1;
+      cache_arr[i] = 0;
 
 
   }
@@ -589,7 +590,7 @@ int search_table(int *arr, int size, int val) //等价于 int search_table(int a
 
     printf("shouldnt come here for search_table()=%d,%d",val,size);
     for( i = 0; i < size; i++) {
-      if(arr[i] != -1) {
+      if(arr[i] != 0) {
         printf("arr[%d]=%d ",i,arr[i]);
       }
     }
@@ -602,7 +603,7 @@ int find_free_pos( int *arr, int size)
 {
     int i;
     for(i = 0 ; i < size; i++) {
-        if(arr[i] == -1) {   //可以改成 if ( *(arr + i ) == 0),  arr[i]和 *(arr+i) 是两个等价
+        if(arr[i] == 0) {   //可以改成 if ( *(arr + i ) == 0),  arr[i]和 *(arr+i) 是两个等价
             return i;
         }
     } 
@@ -817,7 +818,7 @@ void DFTL_init_arr()
 {
   int i;
   for( i= 0; i< MAP_GHOST_MAX_ENTRIES;i++){
-    ghost_arr[i] = -1;
+    ghost_arr[i] = 0;
   }
 
   for( i = 0; i < MAP_REAL_MAX_ENTRIES; i++) {
@@ -893,7 +894,7 @@ void DFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
             printf("can not find free pos in real_arr for %d LPN",blkno);
             assert(0);
           }
-          real_arr[pos]=-1;
+          real_arr[pos]=0;
           real_arr[pos]=blkno;
         }
 
@@ -940,7 +941,7 @@ void DFTL_Ghost_CMT_Full()
       //evict one entry from ghost cache 
       MAP_GHOST_NUM_ENTRIES--;
       pos=search_table(ghost_arr,MAP_GHOST_MAX_ENTRIES,ghost_min);
-      ghost_arr[pos]=-1;
+      ghost_arr[pos]=0;
     }
 }
 
@@ -955,7 +956,7 @@ void DFTL_Real_CMT_Full()
     real_min=MLC_find_real_min();
     MLC_opagemap[real_min].map_status=MAP_GHOST;
     pos = search_table(real_arr,MAP_REAL_MAX_ENTRIES,real_min);
-    real_arr[pos]=-1;
+    real_arr[pos]=0;
     pos=find_free_pos(ghost_arr,MAP_GHOST_MAX_ENTRIES);
     ghost_arr[pos]=real_min;
     MAP_GHOST_NUM_ENTRIES++;
@@ -974,10 +975,10 @@ void DFTL_Hit_Ghost_CMT(int blkno)
     MLC_opagemap[real_min].map_status=MAP_GHOST;
 
     pos_ghost=search_table(ghost_arr,MAP_GHOST_MAX_ENTRIES,blkno);
-    ghost_arr[pos_ghost]=-1;
+    ghost_arr[pos_ghost]=0;
 
     pos_real=search_table(real_arr,MAP_REAL_MAX_ENTRIES,real_min);
-    real_arr[pos_real]=-1;
+    real_arr[pos_real]=0;
 
     real_arr[pos_real]=blkno;
     ghost_arr[pos_ghost]=real_min;
