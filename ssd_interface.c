@@ -690,38 +690,6 @@ double callFsim(unsigned int secno, int scount, int operation,int flash_flag)
       big_request_count+= bcount; 
   }
 
-  // switch(operation)
-  // {
-  //   //write/read
-  //   case 0:
-  //   case 1:
-
-  //   while(cnt > 0)
-  //   {
-  //         cnt--;
-  //         itemcount++;
-  //       // page based FTL
-  //       if(ftl_type == 1){
-  //         send_flash_request(blkno*4, 4, operation, 1,0); 
-  //         blkno++;
-  //       }
-
-  //       // blck based FTL
-  //       else if(ftl_type == 2){
-  //         send_flash_request(blkno*4, 4, operation, 1,0); 
-  //         blkno++;
-  //       }
-
-  //       // opagemap ftl scheme
-  //       else if(ftl_type == 3)
-  //       {
-  //           SDFTL_Scheme(&blkno,&cnt,operation,flash_flag);
-  //       }
-  //   }
-  //   break;
-  // }
-
-
   while(cnt > 0)
   {
       cnt--;
