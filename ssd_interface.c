@@ -137,6 +137,7 @@ void Hit_CMT_Entry(int blkno,int operation);
 void CMT_Is_Full();
 void Hit_SCMT_Entry(int blkno,int operation);
 void Hit_SL_CMT_Entry(int blkno,int operation);
+void pre_load_entry_into_SCMT(int *pageno,int *req_size,int operation);
 /***********************************************************************
   Cache
  ***********************************************************************/
@@ -769,166 +770,12 @@ double callFsim(unsigned int secno, int scount, int operation,int flash_flag)
           blkno++;
         continue;
 		}
-
-
-
 		//3.shzb:连续请求加入连续缓存中
 		else if((cnt+1) >= THRESHOLD)//shzb:THRESHOLD=2,表示大于或等于4KB的请求，当作连续请求来处理。
 		{
-			if(not_in_cache(blkno))
-			{
-			MLC_opagemap[blkno].map_age++;
-			if((MAP_SEQ_MAX_ENTRIES-MAP_SEQ_NUM_ENTRIES)==0)
-			{
-				for(indexofarr = 0;indexofarr < NUM_ENTRIES_PER_TIME;indexofarr++)
-				{//SEQ的替换策略是把SEQ的最前面几个映射项剔除出去
-					if((MLC_opagemap[seq_arr[indexofarr]].update == 1)&&(MLC_opagemap[seq_arr[indexofarr]].map_status == MAP_SEQ))
-					{
-						//update_reqd++;
-						update_flag=1;
-						MLC_opagemap[seq_arr[indexofarr]].update=0;
-						MLC_opagemap[seq_arr[indexofarr]].map_status = MAP_INVALID;
-						MLC_opagemap[seq_arr[indexofarr]].map_age = 0;
-					}
-					else if((MLC_opagemap[seq_arr[indexofarr]].update == 0)&&(MLC_opagemap[seq_arr[indexofarr]].map_status ==MAP_SEQ))
-					{
-						MLC_opagemap[seq_arr[indexofarr]].map_status = MAP_INVALID;
-						MLC_opagemap[seq_arr[indexofarr]].map_age = 0;
-					}
-				}
-				if(update_flag == 1)
-				{
-					send_flash_request(((seq_arr[0]-MLC_page_num_for_2nd_map_table)/MLC_MAP_ENTRIES_PER_PAGE)*8,8,1,2,1);
-					translation_read_num++;
-					send_flash_request(((seq_arr[0]-MLC_page_num_for_2nd_map_table)/MLC_MAP_ENTRIES_PER_PAGE)*8,8,0,2,1);
-					translation_write_num++;
-					update_flag=0;
-				}
-				for(indexofarr = 0;indexofarr <= MAP_SEQ_MAX_ENTRIES-1-NUM_ENTRIES_PER_TIME; indexofarr++)
-					seq_arr[indexofarr] = seq_arr[indexofarr+NUM_ENTRIES_PER_TIME];
-				MAP_SEQ_NUM_ENTRIES-=NUM_ENTRIES_PER_TIME;
-			}
-			flash_hit++;
-			send_flash_request(((blkno-MLC_page_num_for_2nd_map_table)/MLC_MAP_ENTRIES_PER_PAGE)*8, 8, 1, 2,1);
-			translation_read_num++;
-			for(indexofseq=0; indexofseq < NUM_ENTRIES_PER_TIME;indexofseq++)//NUM_ENTRIES_PER_TIME在这里表示一次加载4个映射表信息
-			{
-				MLC_opagemap[blkno+indexofseq].map_status=MAP_SEQ;
-				seq_arr[MAP_SEQ_NUM_ENTRIES] = (blkno+indexofseq);//加载到SEQ的映射项是放在SEQ尾部
-				MAP_SEQ_NUM_ENTRIES++;
-			}
-			if(MAP_SEQ_NUM_ENTRIES > MAP_SEQ_MAX_ENTRIES)
-			{
-				printf("The sequential cache is overflow!\n");
-				exit(0);
-			}
-			if(operation==0)
-			{
-				write_count++;
-				MLC_opagemap[blkno].update=1;
-			}
-			else
-				read_count++;
-			send_flash_request(blkno*8,8,operation,1,1);
-			
-                     blkno++;
-			sequential_count = 0;
-			for(;(cnt>0)&&(sequential_count<NUM_ENTRIES_PER_TIME-1);cnt--)
-			{
-				MLC_opagemap[blkno].map_age++;
-				cache_scmt_hit++;
-				if(operation==0)
-				{
-					write_count++;
-					MLC_opagemap[blkno].update=1;
-				}
-				else
-					read_count++;
-				send_flash_request(blkno*8,8,operation,1,1);
-				blkno++;
-				rqst_cnt++;
-				sequential_count++;
-			}
-			continue;
-			}
-           else
-               {
-              if((MAP_REAL_MAX_ENTRIES - MAP_REAL_NUM_ENTRIES) == 0)
-                 {
-                  min_real = MLC_find_real_min();
-                 if(MLC_opagemap[min_real].update == 1)
-               {
-                  	if((MAP_SECOND_MAX_ENTRIES-MAP_SECOND_NUM_ENTRIES) ==0)
-		       {
-				 MC=0;
-				find_MC_entries(second_arr,MAP_SECOND_MAX_ENTRIES);
-				send_flash_request(maxentry*8,8,1,2,1);
-				translation_read_num++;
-				send_flash_request(maxentry*8,8,0,2,1);
-				translation_write_num++;
-				for(indexold = 0;indexold < MAP_SECOND_MAX_ENTRIES; indexold++)
-			     {
-					if(((second_arr[indexold]-MLC_page_num_for_2nd_map_table)/MLC_MAP_ENTRIES_PER_PAGE) == maxentry)
-				     {
-						MLC_opagemap[second_arr[indexold]].update = 0;
-						MLC_opagemap[second_arr[indexold]].map_status = MAP_INVALID;
-						MLC_opagemap[second_arr[indexold]].map_age = 0;
-						second_arr[indexold]=0;
-						MAP_SECOND_NUM_ENTRIES--;
-				    }
-				}
-			}
-					MLC_opagemap[min_real].map_status = MAP_SECOND;
-                                   pos = search_table(real_arr,MAP_REAL_MAX_ENTRIES,min_real);
-                                   real_arr[pos]=0;
-					MAP_REAL_NUM_ENTRIES--;
-					pos_2nd = find_free_pos(second_arr,MAP_SECOND_MAX_ENTRIES);
-					second_arr[pos_2nd]=0;
-					second_arr[pos_2nd]=min_real;
-					MAP_SECOND_NUM_ENTRIES++;
-					if(MAP_SECOND_NUM_ENTRIES > MAP_SECOND_MAX_ENTRIES)
-					{
-						printf("The second cache is overflow!\n");
-						exit(0);
-					}
-
-               }
-				else
-				{
-                             pos = search_table(real_arr,MAP_REAL_MAX_ENTRIES,min_real);
-                             real_arr[pos]=0;
-                             MLC_opagemap[min_real].map_status = MAP_INVALID;
-				 MLC_opagemap[min_real].map_age = 0;
-                             MAP_REAL_NUM_ENTRIES--;
-				}
-
-            } 
-                flash_hit++;
-            send_flash_request(((blkno-MLC_page_num_for_2nd_map_table)/MLC_MAP_ENTRIES_PER_PAGE)*8, 8, 1, 2,1);   // read from 2nd mapping table
-			translation_read_num++;
-            MLC_opagemap[blkno].map_status = MAP_REAL;
-
-            MLC_opagemap[blkno].map_age = MLC_opagemap[real_max].map_age + 1;
-            real_max = blkno;
-            
-            pos = find_free_pos(real_arr,MAP_REAL_MAX_ENTRIES);//因为real_arr已经被定义成指针变量，调用find_free_pos函数时前面不需要加*
-            real_arr[pos] = 0;
-            real_arr[pos] = blkno;
-            MAP_REAL_NUM_ENTRIES++;
-          if(operation==0){
-            write_count++;
-            MLC_opagemap[blkno].update = 1;
-          }
-          else
-             read_count++;
-
-             send_flash_request(blkno*8, 8, operation, 1,1); 
-                blkno++;
-            continue;
-           }
-           
-          
-	}
+        //shzb:THRESHOLD=2,表示大于或等于4KB的请求，当作连续请求来处理。
+				pre_load_entry_into_SCMT(&blkno,&cnt,operation);
+	  }
 
           //4. opagemap not in SRAM 
             //if map table in SRAM is full
@@ -1105,7 +952,7 @@ void SecnoToPageno(int secno,int scount,int *blkno,int *bcount,int flash_flag)
 }
 
 /**********************************************************
- * 								SDFTL  执行内部封装的函数
+ * 								SDFTL  执行内部封装的函数 CFTL没有region一说
  * ********************************************************/
 // hit CMT-entry
 void Hit_CMT_Entry(int blkno,int operation)
@@ -1232,3 +1079,331 @@ void CMT_Is_Full()
 			
 }
 
+
+//pre load entry into SCMT
+void pre_load_entry_into_SCMT(int *pageno,int *req_size,int operation)
+{
+	
+		int pos=-1,min_real,pos_2nd=-1;
+		int blkno=(*pageno),cnt=(*req_size);
+		if(not_in_cache(blkno)){
+				MLC_opagemap[blkno].map_age++;
+				if((MAP_SEQ_MAX_ENTRIES-MAP_SEQ_NUM_ENTRIES)==0)
+				{
+						for(indexofarr = 0;indexofarr < NUM_ENTRIES_PER_TIME;indexofarr++)
+						{
+							//SEQ的替换策略是把SEQ的最前面几个映射项剔除出去
+							if((MLC_opagemap[seq_arr[indexofarr]].update == 1)&&(MLC_opagemap[seq_arr[indexofarr]].map_status == MAP_SEQ))
+							{
+								//update_reqd++;
+								update_flag=1;
+								MLC_opagemap[seq_arr[indexofarr]].update=0;
+								MLC_opagemap[seq_arr[indexofarr]].map_status = MAP_INVALID;
+								MLC_opagemap[seq_arr[indexofarr]].map_age = 0;
+							}
+							else if((MLC_opagemap[seq_arr[indexofarr]].update == 0)&&(MLC_opagemap[seq_arr[indexofarr]].map_status ==MAP_SEQ))
+							{
+								MLC_opagemap[seq_arr[indexofarr]].map_status = MAP_INVALID;
+								MLC_opagemap[seq_arr[indexofarr]].map_age = 0;
+							}
+						}
+						if(update_flag == 1)
+						{
+								send_flash_request(((seq_arr[0]-MLC_page_num_for_2nd_map_table)/MLC_MAP_ENTRIES_PER_PAGE)*8,8,1,2,1);
+								translation_read_num++;
+								send_flash_request(((seq_arr[0]-MLC_page_num_for_2nd_map_table)/MLC_MAP_ENTRIES_PER_PAGE)*8,8,0,2,1);
+								translation_write_num++;
+								update_flag=0;
+						}
+						for(indexofarr = 0;indexofarr <= MAP_SEQ_MAX_ENTRIES-1-NUM_ENTRIES_PER_TIME; indexofarr++)
+								seq_arr[indexofarr] = seq_arr[indexofarr+NUM_ENTRIES_PER_TIME];
+						MAP_SEQ_NUM_ENTRIES-=NUM_ENTRIES_PER_TIME;
+				}
+				flash_hit++;
+				send_flash_request(((blkno-MLC_page_num_for_2nd_map_table)/MLC_MAP_ENTRIES_PER_PAGE)*8, 8, 1, 2,1);
+				translation_read_num++;
+				for(indexofseq=0; indexofseq < NUM_ENTRIES_PER_TIME;indexofseq++)//NUM_ENTRIES_PER_TIME在这里表示一次加载4个映射表信息
+				{
+					MLC_opagemap[blkno+indexofseq].map_status=MAP_SEQ;
+					seq_arr[MAP_SEQ_NUM_ENTRIES] = (blkno+indexofseq);//加载到SEQ的映射项是放在SEQ尾部
+					MAP_SEQ_NUM_ENTRIES++;
+				}
+				if(MAP_SEQ_NUM_ENTRIES > MAP_SEQ_MAX_ENTRIES)
+				{
+					printf("The sequential cache is overflow!\n");
+					exit(0);
+				}
+				if(operation==0)
+				{
+						write_count++;
+						MLC_opagemap[blkno].update=1;
+				}
+				else
+						read_count++;
+				send_flash_request(blkno*8,8,operation,1,1);
+
+				blkno++;
+				sequential_count = 0;
+				//之后连续的请求因为映射加载完成直接读取写入操作
+				for(;(cnt>0)&&(sequential_count<NUM_ENTRIES_PER_TIME-1);cnt--)
+				{
+					MLC_opagemap[blkno].map_age++;
+					cache_scmt_hit++;
+					if(operation==0)
+					{
+						write_count++;
+						MLC_opagemap[blkno].update=1;
+					}
+					else
+						read_count++;
+					send_flash_request(blkno*8,8,operation,1,1);
+					blkno++;
+					rqst_cnt++;
+					sequential_count++;
+				}
+				
+				//zhoujie
+				*req_size=cnt;
+				*pageno=blkno;
+
+		}
+	   else{
+					if((MAP_REAL_MAX_ENTRIES - MAP_REAL_NUM_ENTRIES) == 0)
+					{
+							min_real = MLC_find_real_min();
+							if(MLC_opagemap[min_real].update == 1)
+							{
+									if((MAP_SECOND_MAX_ENTRIES-MAP_SECOND_NUM_ENTRIES) ==0)
+									{
+											MC=0;
+											find_MC_entries(second_arr,MAP_SECOND_MAX_ENTRIES);
+											send_flash_request(maxentry*8,8,1,2,1);
+											translation_read_num++;
+											send_flash_request(maxentry*8,8,0,2,1);
+											translation_write_num++;
+											for(indexold = 0;indexold < MAP_SECOND_MAX_ENTRIES; indexold++)
+											{
+													if(((second_arr[indexold]-MLC_page_num_for_2nd_map_table)/MLC_MAP_ENTRIES_PER_PAGE) == maxentry)
+													{
+															MLC_opagemap[second_arr[indexold]].update = 0;
+															MLC_opagemap[second_arr[indexold]].map_status = MAP_INVALID;
+															MLC_opagemap[second_arr[indexold]].map_age = 0;
+															second_arr[indexold]=0;
+															MAP_SECOND_NUM_ENTRIES--;
+													}
+											}
+									}
+									MLC_opagemap[min_real].map_status = MAP_SECOND;
+									pos = search_table(real_arr,MAP_REAL_MAX_ENTRIES,min_real);
+									real_arr[pos]=0;
+									MAP_REAL_NUM_ENTRIES--;
+									pos_2nd = find_free_pos(second_arr,MAP_SECOND_MAX_ENTRIES);
+									second_arr[pos_2nd]=0;
+									second_arr[pos_2nd]=min_real;
+									MAP_SECOND_NUM_ENTRIES++;
+									if(MAP_SECOND_NUM_ENTRIES > MAP_SECOND_MAX_ENTRIES)
+									{
+											printf("The second cache is overflow!\n");
+											exit(0);
+									}
+
+							}
+							else
+							{
+								pos = search_table(real_arr,MAP_REAL_MAX_ENTRIES,min_real);
+								real_arr[pos]=0;
+								MLC_opagemap[min_real].map_status = MAP_INVALID;
+								MLC_opagemap[min_real].map_age = 0;
+								MAP_REAL_NUM_ENTRIES--;
+							}
+
+					} 
+					
+					flash_hit++;
+					send_flash_request(((blkno-MLC_page_num_for_2nd_map_table)/MLC_MAP_ENTRIES_PER_PAGE)*8, 8, 1, 2,1);   // read from 2nd mapping table
+					translation_read_num++;
+					MLC_opagemap[blkno].map_status = MAP_REAL;
+
+					MLC_opagemap[blkno].map_age = MLC_opagemap[real_max].map_age + 1;
+					real_max = blkno;
+
+					pos = find_free_pos(real_arr,MAP_REAL_MAX_ENTRIES);//因为real_arr已经被定义成指针变量，调用find_free_pos函数时前面不需要加*
+					real_arr[pos] = 0;
+					real_arr[pos] = blkno;
+					MAP_REAL_NUM_ENTRIES++;
+					if(operation==0){
+						write_count++;
+						MLC_opagemap[blkno].update = 1;
+					}
+					else
+						read_count++;
+
+					send_flash_request(blkno*8, 8, operation, 1,1); 
+					blkno++;
+					
+					//zhoujie
+					*pageno=blkno;
+					*req_size=cnt;
+					
+		}
+															   
+															   
+															   
+															   
+}
+
+
+
+// {
+//   			if(not_in_cache(blkno))
+// 			{
+// 			MLC_opagemap[blkno].map_age++;
+// 			if((MAP_SEQ_MAX_ENTRIES-MAP_SEQ_NUM_ENTRIES)==0)
+// 			{
+// 				for(indexofarr = 0;indexofarr < NUM_ENTRIES_PER_TIME;indexofarr++)
+// 				{//SEQ的替换策略是把SEQ的最前面几个映射项剔除出去
+// 					if((MLC_opagemap[seq_arr[indexofarr]].update == 1)&&(MLC_opagemap[seq_arr[indexofarr]].map_status == MAP_SEQ))
+// 					{
+// 						//update_reqd++;
+// 						update_flag=1;
+// 						MLC_opagemap[seq_arr[indexofarr]].update=0;
+// 						MLC_opagemap[seq_arr[indexofarr]].map_status = MAP_INVALID;
+// 						MLC_opagemap[seq_arr[indexofarr]].map_age = 0;
+// 					}
+// 					else if((MLC_opagemap[seq_arr[indexofarr]].update == 0)&&(MLC_opagemap[seq_arr[indexofarr]].map_status ==MAP_SEQ))
+// 					{
+// 						MLC_opagemap[seq_arr[indexofarr]].map_status = MAP_INVALID;
+// 						MLC_opagemap[seq_arr[indexofarr]].map_age = 0;
+// 					}
+// 				}
+// 				if(update_flag == 1)
+// 				{
+// 					send_flash_request(((seq_arr[0]-MLC_page_num_for_2nd_map_table)/MLC_MAP_ENTRIES_PER_PAGE)*8,8,1,2,1);
+// 					translation_read_num++;
+// 					send_flash_request(((seq_arr[0]-MLC_page_num_for_2nd_map_table)/MLC_MAP_ENTRIES_PER_PAGE)*8,8,0,2,1);
+// 					translation_write_num++;
+// 					update_flag=0;
+// 				}
+// 				for(indexofarr = 0;indexofarr <= MAP_SEQ_MAX_ENTRIES-1-NUM_ENTRIES_PER_TIME; indexofarr++)
+// 					seq_arr[indexofarr] = seq_arr[indexofarr+NUM_ENTRIES_PER_TIME];
+// 				MAP_SEQ_NUM_ENTRIES-=NUM_ENTRIES_PER_TIME;
+// 			}
+// 			flash_hit++;
+// 			send_flash_request(((blkno-MLC_page_num_for_2nd_map_table)/MLC_MAP_ENTRIES_PER_PAGE)*8, 8, 1, 2,1);
+// 			translation_read_num++;
+// 			for(indexofseq=0; indexofseq < NUM_ENTRIES_PER_TIME;indexofseq++)//NUM_ENTRIES_PER_TIME在这里表示一次加载4个映射表信息
+// 			{
+// 				MLC_opagemap[blkno+indexofseq].map_status=MAP_SEQ;
+// 				seq_arr[MAP_SEQ_NUM_ENTRIES] = (blkno+indexofseq);//加载到SEQ的映射项是放在SEQ尾部
+// 				MAP_SEQ_NUM_ENTRIES++;
+// 			}
+// 			if(MAP_SEQ_NUM_ENTRIES > MAP_SEQ_MAX_ENTRIES)
+// 			{
+// 				printf("The sequential cache is overflow!\n");
+// 				exit(0);
+// 			}
+// 			if(operation==0)
+// 			{
+// 				write_count++;
+// 				MLC_opagemap[blkno].update=1;
+// 			}
+// 			else
+// 				read_count++;
+// 			send_flash_request(blkno*8,8,operation,1,1);
+			
+//                      blkno++;
+// 			sequential_count = 0;
+// 			for(;(cnt>0)&&(sequential_count<NUM_ENTRIES_PER_TIME-1);cnt--)
+// 			{
+// 				MLC_opagemap[blkno].map_age++;
+// 				cache_scmt_hit++;
+// 				if(operation==0)
+// 				{
+// 					write_count++;
+// 					MLC_opagemap[blkno].update=1;
+// 				}
+// 				else
+// 					read_count++;
+// 				send_flash_request(blkno*8,8,operation,1,1);
+// 				blkno++;
+// 				rqst_cnt++;
+// 				sequential_count++;
+// 			}
+// 			continue;
+// 			}
+//            else
+//                {
+//               if((MAP_REAL_MAX_ENTRIES - MAP_REAL_NUM_ENTRIES) == 0)
+//                  {
+//                   min_real = MLC_find_real_min();
+//                  if(MLC_opagemap[min_real].update == 1)
+//                {
+//                   	if((MAP_SECOND_MAX_ENTRIES-MAP_SECOND_NUM_ENTRIES) ==0)
+// 		       {
+// 				 MC=0;
+// 				find_MC_entries(second_arr,MAP_SECOND_MAX_ENTRIES);
+// 				send_flash_request(maxentry*8,8,1,2,1);
+// 				translation_read_num++;
+// 				send_flash_request(maxentry*8,8,0,2,1);
+// 				translation_write_num++;
+// 				for(indexold = 0;indexold < MAP_SECOND_MAX_ENTRIES; indexold++)
+// 			     {
+// 					if(((second_arr[indexold]-MLC_page_num_for_2nd_map_table)/MLC_MAP_ENTRIES_PER_PAGE) == maxentry)
+// 				     {
+// 						MLC_opagemap[second_arr[indexold]].update = 0;
+// 						MLC_opagemap[second_arr[indexold]].map_status = MAP_INVALID;
+// 						MLC_opagemap[second_arr[indexold]].map_age = 0;
+// 						second_arr[indexold]=0;
+// 						MAP_SECOND_NUM_ENTRIES--;
+// 				    }
+// 				}
+// 			}
+// 					MLC_opagemap[min_real].map_status = MAP_SECOND;
+//                                    pos = search_table(real_arr,MAP_REAL_MAX_ENTRIES,min_real);
+//                                    real_arr[pos]=0;
+// 					MAP_REAL_NUM_ENTRIES--;
+// 					pos_2nd = find_free_pos(second_arr,MAP_SECOND_MAX_ENTRIES);
+// 					second_arr[pos_2nd]=0;
+// 					second_arr[pos_2nd]=min_real;
+// 					MAP_SECOND_NUM_ENTRIES++;
+// 					if(MAP_SECOND_NUM_ENTRIES > MAP_SECOND_MAX_ENTRIES)
+// 					{
+// 						printf("The second cache is overflow!\n");
+// 						exit(0);
+// 					}
+
+//                }
+// 				else
+// 				{
+//                              pos = search_table(real_arr,MAP_REAL_MAX_ENTRIES,min_real);
+//                              real_arr[pos]=0;
+//                              MLC_opagemap[min_real].map_status = MAP_INVALID;
+// 				 MLC_opagemap[min_real].map_age = 0;
+//                              MAP_REAL_NUM_ENTRIES--;
+// 				}
+
+//             } 
+//                 flash_hit++;
+//             send_flash_request(((blkno-MLC_page_num_for_2nd_map_table)/MLC_MAP_ENTRIES_PER_PAGE)*8, 8, 1, 2,1);   // read from 2nd mapping table
+// 			translation_read_num++;
+//             MLC_opagemap[blkno].map_status = MAP_REAL;
+
+//             MLC_opagemap[blkno].map_age = MLC_opagemap[real_max].map_age + 1;
+//             real_max = blkno;
+            
+//             pos = find_free_pos(real_arr,MAP_REAL_MAX_ENTRIES);//因为real_arr已经被定义成指针变量，调用find_free_pos函数时前面不需要加*
+//             real_arr[pos] = 0;
+//             real_arr[pos] = blkno;
+//             MAP_REAL_NUM_ENTRIES++;
+//           if(operation==0){
+//             write_count++;
+//             MLC_opagemap[blkno].update = 1;
+//           }
+//           else
+//              read_count++;
+
+//              send_flash_request(blkno*8, 8, operation, 1,1); 
+//                 blkno++;
+//             continue;
+//            }
+// }
