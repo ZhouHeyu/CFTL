@@ -719,108 +719,71 @@ double callFsim(unsigned int secno, int scount, int operation,int flash_flag)
               blkno++;
            }
            else{
-              if (itemcount<itemcount_threshold)//利用trace数进行判断
-              { 
+              if (itemcount<itemcount_threshold)
+              {
+                //利用trace数进行判断 
                   rqst_cnt++;
                   if(operation==0){
                       write_count++;//用于计算总的写请求数    
                   }
                   else
                     read_count++;
+                  blkno++;
               }
               else
               {
-                  if (itemcount==itemcount_threshold)
-              {
-                request_cnt = rqst_cnt;
-                write_cnt = write_count;
-                read_cnt = read_count;
-                write_ratio = (write_cnt*1.0)/request_cnt;//写请求比例
-                read_ratio = (read_cnt*1.0)/request_cnt;  //读请求比列 
-                
-                average_request_size = (total_request_size*1.0)/itemcount;//请求平均大小
+                if (itemcount==itemcount_threshold)
+                {
+                  request_cnt = rqst_cnt;
+                  write_cnt = write_count;
+                  read_cnt = read_count;
+                  write_ratio = (write_cnt*1.0)/request_cnt;//写请求比例
+                  read_ratio = (read_cnt*1.0)/request_cnt;  //读请求比列 
+                  
+                  average_request_size = (total_request_size*1.0)/itemcount;//请求平均大小
 
-                  MAP_REAL_MAX_ENTRIES=4096;
-                  real_arr=(int *)malloc(sizeof(int)*MAP_REAL_MAX_ENTRIES);
-                  //MAP_GHOST_MAX_ENTRIES=822;
-                  //ghost_arr=(int *)malloc(sizeof(int)*MAP_GHOST_MAX_ENTRIES);
-                  MAP_SEQ_MAX_ENTRIES=1536; 
-                  seq_arr=(int *)malloc(sizeof(int)*MAP_SEQ_MAX_ENTRIES); 
-                  MAP_SECOND_MAX_ENTRIES=2560; 
-                  second_arr=(int *)malloc(sizeof(int)*MAP_SECOND_MAX_ENTRIES); 
-                  init_arr();                             
-             }
-              rqst_cnt++;
-            //duchenjie:no ghost
-          if (MLC_opagemap[blkno].map_status == MAP_REAL)
-          {
-              Hit_CMT_Entry(blkno,operation);
-						  blkno++;
-		          continue;
-          }
-		//2.shzb:请求在连续缓存中
-		else if((MLC_opagemap[blkno].map_status == MAP_SEQ)||(MLC_opagemap[blkno].map_status == MAP_SECOND))
-		{
-        //			cache_hit++;
-        if(MLC_opagemap[blkno].map_status == MAP_SEQ){
-            Hit_SCMT_Entry(blkno,operation);
-        }
-        else {  
-            Hit_SL_CMT_Entry(blkno,operation);
-        }
-          blkno++;
-        continue;
-		}
-		//3.shzb:连续请求加入连续缓存中
-		else if((cnt+1) >= THRESHOLD)//shzb:THRESHOLD=2,表示大于或等于4KB的请求，当作连续请求来处理。
-		{
-        //shzb:THRESHOLD=2,表示大于或等于4KB的请求，当作连续请求来处理。
-				pre_load_entry_into_SCMT(&blkno,&cnt,operation);
-	  }
-
-      //4. opagemap not in SRAM  must think about if map table in SRAM is full
-        if((MAP_REAL_MAX_ENTRIES - MAP_REAL_NUM_ENTRIES) == 0)
-        {
-            CMT_Is_Full();
-        }
-
-        flash_hit++;
-        send_flash_request(((blkno-MLC_page_num_for_2nd_map_table)/MLC_MAP_ENTRIES_PER_PAGE)*8, 8, 1, 2,1);   // read from 2nd mapping table
-        translation_read_num++;
-        MLC_opagemap[blkno].map_status = MAP_REAL;
-
-        MLC_opagemap[blkno].map_age = MLC_opagemap[real_max].map_age + 1;
-        real_max = blkno;
-        
-        pos = find_free_pos(real_arr,MAP_REAL_MAX_ENTRIES);//因为real_arr已经被定义成指针变量，调用find_free_pos函数时前面不需要加*
-        real_arr[pos] = 0;
-        real_arr[pos] = blkno;
-        MAP_REAL_NUM_ENTRIES++;
-        if(operation==0){
-          write_count++;
-          MLC_opagemap[blkno].update = 1;
-        }
-        else
-          read_count++;
-
-        send_flash_request(blkno*8, 8, operation, 1,1);
-        }
-             blkno++;
-           }
-        }
-        // FAST scheme  
-        else if(ftl_type == 4){ 
-
-          if(operation == 0){
-            write_count++;
-          }
-          else read_count++;
-
-          send_flash_request(blkno*4, 4, operation, 1,0); //cache_min is a page for page baseed FTL
-          blkno++;
-        }
-    }
-    break;
+                    MAP_REAL_MAX_ENTRIES=4096;
+                    real_arr=(int *)malloc(sizeof(int)*MAP_REAL_MAX_ENTRIES);
+                    //MAP_GHOST_MAX_ENTRIES=822;
+                    //ghost_arr=(int *)malloc(sizeof(int)*MAP_GHOST_MAX_ENTRIES);
+                    MAP_SEQ_MAX_ENTRIES=1536; 
+                    seq_arr=(int *)malloc(sizeof(int)*MAP_SEQ_MAX_ENTRIES); 
+                    MAP_SECOND_MAX_ENTRIES=2560; 
+                    second_arr=(int *)malloc(sizeof(int)*MAP_SECOND_MAX_ENTRIES); 
+                    init_arr();                             
+                }
+                rqst_cnt++;
+                  //duchenjie:no ghost
+                if (MLC_opagemap[blkno].map_status == MAP_REAL)
+                {
+                    Hit_CMT_Entry(blkno,operation);
+                    blkno++;
+                }
+                //2.shzb:请求在连续缓存中
+                else if((MLC_opagemap[blkno].map_status == MAP_SEQ)||(MLC_opagemap[blkno].map_status == MAP_SECOND))
+                {
+                    //			cache_hit++;
+                    if(MLC_opagemap[blkno].map_status == MAP_SEQ){
+                        Hit_SCMT_Entry(blkno,operation);
+                    }
+                    else {  
+                        Hit_SL_CMT_Entry(blkno,operation);
+                    }
+                      blkno++;
+                }
+                //3.shzb:连续请求加入连续缓存中
+                else if((cnt+1) >= THRESHOLD)
+                {
+                    //shzb:THRESHOLD=2,表示大于或等于4KB的请求，当作连续请求来处理。
+                    pre_load_entry_into_SCMT(&blkno,&cnt,operation);
+                }else{
+                      //4. opagemap not in SRAM  must think about if map table in SRAM is full
+                        req_Entry_Miss_SDFTL(blkno,operation);
+                        blkno++;
+                }
+              }
+   
+            }
   }
 
 
