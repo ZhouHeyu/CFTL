@@ -884,7 +884,7 @@ void DFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
           send_flash_request(((blkno-MLC_page_num_for_2nd_map_table)/MLC_MAP_ENTRIES_PER_PAGE)*8,8,1,2,1);
           translation_read_num++;
           MLC_opagemap[blkno].map_status=MAP_REAL;
-          MLC_opagemap[blkno].map_age=opagemap[real_max].map_age+1;
+          MLC_opagemap[blkno].map_age=MLC_opagemap[real_max].map_age+1;
           real_max=blkno;
           MAP_REAL_NUM_ENTRIES++;
           pos=find_free_pos(real_arr,MAP_REAL_MAX_ENTRIES);
@@ -939,7 +939,7 @@ void DFTL_Ghost_CMT_Full()
 
       //evict one entry from ghost cache 
       MAP_GHOST_NUM_ENTRIES--;
-      pos=search_table(ghost_arr,MAP_GHOST_MAX_ENTRIES,ghost_arr);
+      pos=search_table(ghost_arr,MAP_GHOST_MAX_ENTRIES,ghost_min);
       ghost_arr[pos]=-1;
     }
 }
@@ -1032,17 +1032,17 @@ void DFTL_Hit_Real_CMT(int blkno)
           write_ratio = (write_cnt*1.0)/request_cnt;//写请求比例
           read_ratio = (read_cnt*1.0)/request_cnt;  //读请求比列 
           
-          average_request_size   rqst_cnt++; = (total_request_size*1.0)/itemcount;//请求平均大小
+          average_request_size = (total_request_size*1.0)/itemcount;//请求平均大小
 
-            MAP_REAL_MAX_ENTRIES=4096;
-            real_arr=(int *)malloc(sizeof(int)*MAP_REAL_MAX_ENTRIES);
-            //MAP_GHOST_MAX_ENTRIES=822;
-            //ghost_arr=(int *)malloc(sizeof(int)*MAP_GHOST_MAX_ENTRIES);
-            MAP_SEQ_MAX_ENTRIES=1536; 
-            seq_arr=(int *)malloc(sizeof(int)*MAP_SEQ_MAX_ENTRIES); 
-            MAP_SECOND_MAX_ENTRIES=2560; 
-            second_arr=(int *)malloc(sizeof(int)*MAP_SECOND_MAX_ENTRIES); 
-            init_arr();                             
+          MAP_REAL_MAX_ENTRIES=4096;
+          real_arr=(int *)malloc(sizeof(int)*MAP_REAL_MAX_ENTRIES);
+          //MAP_GHOST_MAX_ENTRIES=822;
+          //ghost_arr=(int *)malloc(sizeof(int)*MAP_GHOST_MAX_ENTRIES);
+          MAP_SEQ_MAX_ENTRIES=1536; 
+          seq_arr=(int *)malloc(sizeof(int)*MAP_SEQ_MAX_ENTRIES); 
+          MAP_SECOND_MAX_ENTRIES=2560; 
+          second_arr=(int *)malloc(sizeof(int)*MAP_SECOND_MAX_ENTRIES); 
+          init_arr();                             
         }
           rqst_cnt++;
           //duchenjie:no ghost
