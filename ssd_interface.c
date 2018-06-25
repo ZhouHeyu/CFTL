@@ -123,6 +123,17 @@ struct lru *block;
 int block_index = 0;
 int block_entry_num = 0;
 int blocksize = init_size;//LRU块列表中初始块的个数*/
+
+/***********************************************************************
+ *    author: zhoujie
+ *  封装 callFsim的代码函数
+ ***********************************************************************/
+void SecnoToPageno(int secno,int scount,int *blkno,int *bcount,int flash_flag);
+/***********************************************************************
+ *  author :zhoujie       
+ * SDFTL 代码执行的内部封装函数
+ ***********************************************************************/
+void Hit_CMT_Entry(int blkno,int operation);
 /***********************************************************************
   Cache
  ***********************************************************************/
@@ -662,35 +673,8 @@ double callFsim(unsigned int secno, int scount, int operation,int flash_flag)
         MLC_page_num_for_2nd_map_table++;
       }
   }
-      
-  // page based FTL 
-  if(ftl_type == 1 ) { 
-    blkno = secno / 4;
-    bcount = (secno + scount -1)/4 - (secno)/4 + 1;
-  }  
-  // block based FTL 
-  else if(ftl_type == 2){
-    blkno = secno/4;
-    bcount = (secno + scount -1)/4 - (secno)/4 + 1;
-  }
-  // o-pagemap scheme
-  else if(ftl_type == 3 ) {
-    if(flash_flag==0){ 
-       blkno = secno / 4;
-       bcount = (secno + scount -1)/4 - (secno)/4 + 1;
-    }
-    else{
-      
-       blkno = secno / 8;
-       blkno += MLC_page_num_for_2nd_map_table;
-       bcount = (secno + scount -1)/8 - (secno)/8 + 1;
-    }
-  }  
-  // FAST scheme
-  else if(ftl_type == 4){
-    blkno = secno/4;
-    bcount = (secno + scount -1)/4 - (secno)/4 + 1;
-  }
+  //扇区和页对齐,转化 
+  SecnoToPageno(secno,scount,&blkno,&bcount,flash_flag);
 
   cnt = bcount;
   total_request_size = total_request_size + bcount;
@@ -699,6 +683,7 @@ double callFsim(unsigned int secno, int scount, int operation,int flash_flag)
       big_request_entry++;
       big_request_count+= bcount; 
   }
+
   switch(operation)
   {
     //write/read
@@ -741,49 +726,32 @@ double callFsim(unsigned int secno, int scount, int operation,int flash_flag)
               else
               {
                   if (itemcount==itemcount_threshold)
-             {
-              request_cnt = rqst_cnt;
-              write_cnt = write_count;
-              read_cnt = read_count;
-              write_ratio = (write_cnt*1.0)/request_cnt;//写请求比例
-              read_ratio = (read_cnt*1.0)/request_cnt;  //读请求比列 
-              
-              average_request_size = (total_request_size*1.0)/itemcount;//请求平均大小
+              {
+                request_cnt = rqst_cnt;
+                write_cnt = write_count;
+                read_cnt = read_count;
+                write_ratio = (write_cnt*1.0)/request_cnt;//写请求比例
+                read_ratio = (read_cnt*1.0)/request_cnt;  //读请求比列 
+                
+                average_request_size = (total_request_size*1.0)/itemcount;//请求平均大小
 
-                MAP_REAL_MAX_ENTRIES=4096;
-                real_arr=(int *)malloc(sizeof(int)*MAP_REAL_MAX_ENTRIES);
-                //MAP_GHOST_MAX_ENTRIES=822;
-                //ghost_arr=(int *)malloc(sizeof(int)*MAP_GHOST_MAX_ENTRIES);
-                MAP_SEQ_MAX_ENTRIES=1536; 
-                seq_arr=(int *)malloc(sizeof(int)*MAP_SEQ_MAX_ENTRIES); 
-                MAP_SECOND_MAX_ENTRIES=2560; 
-                second_arr=(int *)malloc(sizeof(int)*MAP_SECOND_MAX_ENTRIES); 
-                init_arr();                             
+                  MAP_REAL_MAX_ENTRIES=4096;
+                  real_arr=(int *)malloc(sizeof(int)*MAP_REAL_MAX_ENTRIES);
+                  //MAP_GHOST_MAX_ENTRIES=822;
+                  //ghost_arr=(int *)malloc(sizeof(int)*MAP_GHOST_MAX_ENTRIES);
+                  MAP_SEQ_MAX_ENTRIES=1536; 
+                  seq_arr=(int *)malloc(sizeof(int)*MAP_SEQ_MAX_ENTRIES); 
+                  MAP_SECOND_MAX_ENTRIES=2560; 
+                  second_arr=(int *)malloc(sizeof(int)*MAP_SECOND_MAX_ENTRIES); 
+                  init_arr();                             
              }
               rqst_cnt++;
             //duchenjie:no ghost
           if (MLC_opagemap[blkno].map_status == MAP_REAL)
           {
-            cache_cmt_hit++;
-
-                MLC_opagemap[blkno].map_age = MLC_opagemap[real_max].map_age + 1;//LRU
-                real_max = blkno;
-
-              if(MLC_opagemap[real_max].map_age <= MLC_opagemap[blkno].map_age)
-              {
-                real_max = blkno;
-              }  
-            
-          if(operation==0){
-            write_count++;
-            MLC_opagemap[blkno].update = 1;
-          }
-          else
-             read_count++;
-
-          send_flash_request(blkno*8, 8, operation, 1,1); 
-          blkno++;
-		  continue;
+              Hit_CMT_Entry(blkno,operation);
+						  blkno++;
+		          continue;
           }
 		//2.shzb:请求在连续缓存中
 		else if((MLC_opagemap[blkno].map_status == MAP_SEQ)||(MLC_opagemap[blkno].map_status == MAP_SECOND))
@@ -1118,6 +1086,44 @@ double callFsim(unsigned int secno, int scount, int operation,int flash_flag)
     }
     break;
   }
+
+
+  //   while(cnt > 0)
+  // {
+  //     cnt--;
+  //     itemcount++;
+  //     switch(ftl_type){
+  //       case 1:
+  //             // page based FTL
+  //             send_flash_request(blkno*4, 4, operation, 1,0); 
+  //               blkno++;
+  //             break;
+  //       case 2:
+  //             // blck based FTL
+  //             send_flash_request(blkno*4, 4, operation, 1,0); 
+  //               blkno++;
+  //             break;
+  //       case 4: 
+  //             // FAST scheme 
+  //             if(operation == 0){
+  //               write_count++;
+  //               }
+  //               else {
+  //                 read_count++;
+  //               }
+  //               send_flash_request(blkno*4, 4, operation, 1,0); //cache_min is a page for page baseed FTL
+  //               blkno++;
+  //             break;
+  //       case 3:
+  //             // SDFTL scheme
+  //             SDFTL_Scheme(&blkno,&cnt,operation,flash_flag);
+  //             break;
+  //       }//end-switch
+
+  // }//end-while
+
+
+  // 计算对应的时延
   if(flash_flag==0){
      delay = calculate_delay_SLC_flash();
   }
@@ -1125,5 +1131,65 @@ double callFsim(unsigned int secno, int scount, int operation,int flash_flag)
      delay = calculate_delay_MLC_flash();
   }
   return delay;
+}
+
+
+/************************CallFsim预处理函数**************************/
+void SecnoToPageno(int secno,int scount,int *blkno,int *bcount,int flash_flag)
+ {
+		 switch(ftl_type){
+			 case 1:
+						// page based FTL 
+						*blkno = secno / 4;
+						*bcount = (secno + scount -1)/4 - (secno)/4 + 1;
+						break;
+			case 2:
+						// block based FTL 
+						*blkno = secno/4;
+						*bcount = (secno + scount -1)/4 - (secno)/4 + 1;      
+						break;
+			case 3:
+						 // o-pagemap scheme
+						if(flash_flag==0){ 
+						   *blkno = secno / 4;
+						   *bcount = (secno + scount -1)/4 - (secno)/4 + 1;
+						   SLC_write_page_count+=(*bcount);
+						}
+						else{
+						   *blkno = secno / 8;
+						   *blkno += MLC_page_num_for_2nd_map_table;
+						   *bcount = (secno + scount -1)/8 - (secno)/8 + 1;
+						}
+						break;
+			case 4:
+						// FAST scheme
+						*blkno = secno/4;
+						*bcount = (secno + scount -1)/4 - (secno)/4 + 1;
+						break;		
+		 }
+}
+
+/**********************************************************
+ * 								SDFTL  执行内部封装的函数
+ * ********************************************************/
+// hit CMT-entry
+void Hit_CMT_Entry(int blkno,int operation)
+{
+			cache_cmt_hit++;
+			MLC_opagemap[blkno].map_age = MLC_opagemap[real_max].map_age + 1;//LRU
+			real_max = blkno;
+
+		  if(MLC_opagemap[real_max].map_age <= MLC_opagemap[blkno].map_age){
+				real_max = blkno;
+		  }  
+		
+		  if(operation==0){
+				write_count++;
+				MLC_opagemap[blkno].update = 1;
+		  }
+		  else
+				read_count++;
+				
+		  send_flash_request(blkno*8, 8, operation, 1,1); 
 }
 
