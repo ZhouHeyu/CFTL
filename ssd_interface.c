@@ -784,6 +784,9 @@ double callFsim(unsigned int secno, int scount, int operation,int flash_flag)
               }
    
             }
+        }
+    }
+    break;
   }
 
 
@@ -835,7 +838,7 @@ double callFsim(unsigned int secno, int scount, int operation,int flash_flag)
 
 /************************CallFsim预处理函数**************************/
 void SecnoToPageno(int secno,int scount,int *blkno,int *bcount,int flash_flag)
- {
+{
 		 switch(ftl_type){
 			 case 1:
 						// page based FTL 
@@ -1199,7 +1202,6 @@ void req_Entry_Miss_SDFTL(int blkno,int operation)
 			read_count++;
 
 		send_flash_request(blkno*8, 8, operation, 1,1);
-
 	
 }
 
