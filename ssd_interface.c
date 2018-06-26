@@ -588,6 +588,7 @@ int search_table(int *arr, int size, int val) //等价于 int search_table(int a
         }
     }
 
+	/* debug
     printf("shouldnt come here for search_table()=%d,%d",val,size);
     for( i = 0; i < size; i++) {
       if(arr[i] != 0) {
@@ -595,6 +596,7 @@ int search_table(int *arr, int size, int val) //等价于 int search_table(int a
       }
     }
     exit(1);
+	*/
     return -1;
 }
 
@@ -607,8 +609,8 @@ int find_free_pos( int *arr, int size)
             return i;
         }
     } 
-    printf("shouldn't come here for find_free_pos()\n");
-    exit(1);
+	//   printf("shouldn't come here for find_free_pos()\n");
+	//	exit(1);
     return -1;
 }
 
@@ -757,7 +759,8 @@ double callFsim(unsigned int secno, int scount, int operation,int flash_flag)
               break;
         case 3:
               // SDFTL scheme
-              SDFTL_Scheme(&blkno,&cnt,operation,flash_flag);
+             // SDFTL_Scheme(&blkno,&cnt,operation,flash_flag);
+				DFTL_Scheme(&blkno,&cnt,operation,flash_flag);
               break;
         }//end-switch
 
@@ -868,8 +871,13 @@ void DFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
           cache_hit++;
           MLC_opagemap[blkno].map_age++;
           if(MLC_opagemap[blkno].map_status==MAP_GHOST){
+			  //debug test
+			 // printf("Hit Ghost CMT ,cache_hit %d\n",cache_hit);
+
               DFTL_Hit_Ghost_CMT(blkno);
           }else if(MLC_opagemap[blkno].map_status==MAP_REAL){
+			  // debug test
+			  // printf("Hit Real CMT ,cache_hit %d\n",cache_hit);
               DFTL_Hit_Real_CMT(blkno);
           }else{
             // debug
@@ -941,6 +949,10 @@ void DFTL_Ghost_CMT_Full()
       //evict one entry from ghost cache 
       MAP_GHOST_NUM_ENTRIES--;
       pos=search_table(ghost_arr,MAP_GHOST_MAX_ENTRIES,ghost_min);
+	  if(pos==-1){
+		printf("can not find ghost_min:%d  in ghost_arr\n",ghost_min);
+		assert(0);
+	  }
       ghost_arr[pos]=0;
     }
 }
@@ -956,6 +968,10 @@ void DFTL_Real_CMT_Full()
     real_min=MLC_find_real_min();
     MLC_opagemap[real_min].map_status=MAP_GHOST;
     pos = search_table(real_arr,MAP_REAL_MAX_ENTRIES,real_min);
+	if(pos==-1){
+		printf("can not find real_min:%d  in real_arr\n",real_min);
+		assert(0);
+	}	  
     real_arr[pos]=0;
     pos=find_free_pos(ghost_arr,MAP_GHOST_MAX_ENTRIES);
     ghost_arr[pos]=real_min;
@@ -969,15 +985,23 @@ void DFTL_Hit_Ghost_CMT(int blkno)
   int pos_ghost=-1,pos_real=-1;
   real_min=MLC_find_real_min();
   // 注意交换状态和数组数据
-  if(MLC_opagemap[blkno].map_age<=MLC_opagemap[blkno].map_age){
+  if(MLC_opagemap[real_min].map_age<=MLC_opagemap[blkno].map_age){
     // 两者相互交换状态
     MLC_opagemap[blkno].map_status=MAP_REAL;
     MLC_opagemap[real_min].map_status=MAP_GHOST;
 
     pos_ghost=search_table(ghost_arr,MAP_GHOST_MAX_ENTRIES,blkno);
+	if(pos_ghost==-1){
+		printf("can not find blkno:%d  in ghost_arr\n",blkno);
+		assert(0);
+	}	  
     ghost_arr[pos_ghost]=0;
 
     pos_real=search_table(real_arr,MAP_REAL_MAX_ENTRIES,real_min);
+	if(pos_real==-1){
+		printf("can not find real_min:%d  in real_arr\n",real_min);
+		assert(0);
+	}	  
     real_arr[pos_real]=0;
 
     real_arr[pos_real]=blkno;
@@ -1137,7 +1161,7 @@ void Hit_SCMT_Entry(int blkno,int operation)
 						MLC_opagemap[blkno].map_age = MLC_opagemap[real_max].map_age + 1;
 						real_max = blkno;      
 						pos = find_free_pos(real_arr,MAP_REAL_MAX_ENTRIES);
-						real_arr[pos] = -1;
+						real_arr[pos] = 0;
 						real_arr[pos] = blkno;
 						MAP_REAL_NUM_ENTRIES++;
 			}
@@ -1187,10 +1211,14 @@ void CMT_Is_Full()
 						//将CMT中更新的映射项剔除到SL-CMT中
 						MLC_opagemap[min_real].map_status = MAP_SECOND;
 						pos = search_table(real_arr,MAP_REAL_MAX_ENTRIES,min_real);
-						real_arr[pos]=-1;
+						if(pos==-1){
+							printf("can not find min_real:%d  in real_arr\n",min_real);
+							assert(0);
+						}	  
+						real_arr[pos]=0;
 						MAP_REAL_NUM_ENTRIES--;
 						pos_2nd = find_free_pos(second_arr,MAP_SECOND_MAX_ENTRIES);
-						second_arr[pos_2nd]=-1;
+						second_arr[pos_2nd]=0;
 						second_arr[pos_2nd]=min_real;
 						MAP_SECOND_NUM_ENTRIES++;
 						//debug
@@ -1201,7 +1229,11 @@ void CMT_Is_Full()
 				}else{
 					//没有更新的直接删除
 							pos = search_table(real_arr,MAP_REAL_MAX_ENTRIES,min_real);
-							real_arr[pos]=-1;
+							if(pos==-1){
+								printf("can not find min_real:%d  in real_arr\n",min_real);
+								assert(0);
+							}	  
+							real_arr[pos]=0;
 							MLC_opagemap[min_real].map_status = MAP_INVALID;
 							MLC_opagemap[min_real].map_age = 0;
 							MAP_REAL_NUM_ENTRIES--;
@@ -1327,10 +1359,14 @@ void pre_load_entry_into_SCMT(int *pageno,int *req_size,int operation)
 									}
 									MLC_opagemap[min_real].map_status = MAP_SECOND;
 									pos = search_table(real_arr,MAP_REAL_MAX_ENTRIES,min_real);
-									real_arr[pos]=-1;
+									if(pos==-1){
+										printf("can not find min_real:%d  in real_arr\n",min_real);
+										assert(0);
+									}	  
+									real_arr[pos]=0;
 									MAP_REAL_NUM_ENTRIES--;
 									pos_2nd = find_free_pos(second_arr,MAP_SECOND_MAX_ENTRIES);
-									second_arr[pos_2nd]=-1;
+									second_arr[pos_2nd]=0;
 									second_arr[pos_2nd]=min_real;
 									MAP_SECOND_NUM_ENTRIES++;
 									if(MAP_SECOND_NUM_ENTRIES > MAP_SECOND_MAX_ENTRIES)
@@ -1343,6 +1379,10 @@ void pre_load_entry_into_SCMT(int *pageno,int *req_size,int operation)
 							else
 							{
 								pos = search_table(real_arr,MAP_REAL_MAX_ENTRIES,min_real);
+								if(pos==-1){
+									printf("can not find min_real:%d  in real_arr\n",min_real);
+									assert(0);
+								}	  
 								real_arr[pos]=0;
 								MLC_opagemap[min_real].map_status = MAP_INVALID;
 								MLC_opagemap[min_real].map_age = 0;
@@ -1402,7 +1442,7 @@ void req_Entry_Miss_SDFTL(int blkno,int operation)
 		real_max = blkno;
 
 		pos = find_free_pos(real_arr,MAP_REAL_MAX_ENTRIES);//因为real_arr已经被定义成指针变量，调用find_free_pos函数时前面不需要加*
-		real_arr[pos] = -1;
+		real_arr[pos] = 0;
 		real_arr[pos] = blkno;
 		MAP_REAL_NUM_ENTRIES++;
 	  if(operation==0){
