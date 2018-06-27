@@ -779,9 +779,12 @@ double callFsim(unsigned int secno, int scount, int operation,int flash_flag)
                 blkno++;
               break;
         case 3:
-              // SDFTL scheme
-             // SDFTL_Scheme(&blkno,&cnt,operation,flash_flag);
-				DFTL_Scheme(&blkno,&cnt,operation,flash_flag);
+				 // SDFTL scheme
+				// SDFTL_Scheme(&blkno,&cnt,operation,flash_flag);
+				// DFTL scheme
+				//DFTL_Scheme(&blkno,&cnt,operation,flash_flag);
+				// CPFTL scheme
+				CPFTL_Scheme(&blkno,&cnt,operation,flash_flag);
               break;
         }//end-switch
 
@@ -1515,13 +1518,15 @@ void CPFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
           
           average_request_size = (total_request_size*1.0)/itemcount;//请求平均大小
 
-          MAP_REAL_MAX_ENTRIES=4096;
+		  //test set 100
+          MAP_REAL_MAX_ENTRIES=100;
           // real_arr 当做H-CMT使用
           real_arr=(int *)malloc(sizeof(int)*MAP_REAL_MAX_ENTRIES);
           MAP_SEQ_MAX_ENTRIES=1536;
           // seq_arr当做S-CMT使用 
           seq_arr=(int *)malloc(sizeof(int)*MAP_SEQ_MAX_ENTRIES); 
-          MAP_SECOND_MAX_ENTRIES=2560;
+		  //test set 100
+          MAP_SECOND_MAX_ENTRIES=100;
           // second_arr当做C-CMT使用 
           second_arr=(int *)malloc(sizeof(int)*MAP_SECOND_MAX_ENTRIES); 
           init_arr();                             
@@ -1616,18 +1621,21 @@ void H_CMT_Is_Full()
 
 void load_entry_into_C_CMT(int blkno,int operation)
 {
-    int pos_2nd=-1;
+    int free_pos=-1;
     flash_hit++;
     // read MVPN page 
-	  send_flash_request(((blkno-MLC_page_num_for_2nd_map_table)/MLC_MAP_ENTRIES_PER_PAGE)*8, 8, 1, 2,1);   // read from 2nd mapping table
-		translation_read_num++;
-		MLC_opagemap[blkno].map_status = MAP_SECOND;
+	 send_flash_request(((blkno-MLC_page_num_for_2nd_map_table)/MLC_MAP_ENTRIES_PER_PAGE)*8, 8, 1, 2,1);   // read from 2nd mapping table
+	translation_read_num++;
+	MLC_opagemap[blkno].map_status = MAP_SECOND;
 
-    // MLC_find_second_max();
-    // MLC_opagemap[blkno].map_age = MLC_opagemap[second_max].map_age + 1;
-		// second_max = blkno;
     MLC_opagemap[blkno].map_age=sys_time;
     sys_time++;
+	free_pos=find_free_pos(second_arr,MAP_SECOND_MAX_ENTRIES);
+    if(free_pos==-1){
+      printf("can not find free pos in second_arr\n");
+      assert(0);
+    }
+	second_arr[free_pos]=blkno;
     MAP_SECOND_NUM_ENTRIES++;
 
   // write or read data page 
@@ -1707,8 +1715,8 @@ void load_CCMT_or_SCMT_to_HCMT(int blkno,int operation)
     MLC_opagemap[blkno].map_status=MAP_REAL;
     MAP_REAL_NUM_ENTRIES++;
   }else{
-    printf("should not come here\n");
-    assert(0);
+    //printf("should not come here\n");
+    //assert(0);
   }
 
   //operation data pages 
