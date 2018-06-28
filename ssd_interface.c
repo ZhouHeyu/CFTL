@@ -178,10 +178,34 @@ void load_CCMT_or_SCMT_to_HCMT(int blkno,int operation);
 void CPFTL_pre_load_entry_into_SCMT(int *pageno,int *req_size,int operation);
 
 /***********************************************************************
+ *                    debug function
+***********************************************************************/
+int CheckArrNum(int * arr,int max_num ,int curr_num);
+
+/***********************************************************************
   Cache
  ***********************************************************************/
 int cache_min = -1;
 int cache_max = 0;
+
+// vaild_value >0
+int CheckArrNum(int * arr，int max_num ,int curr_num)
+{
+  int flag=0;
+  int cnt=0,i;
+  for(i=0;i< max_num;i++){
+    if(arr[i]>0){
+      cnt++;
+    }
+  }
+
+  if(curr_num!=cnt){
+    return cnt;
+  }
+
+  return flag;
+}
+
 
 // Interface between disksim & fsim 
 
@@ -1047,6 +1071,17 @@ void DFTL_Hit_Ghost_CMT(int blkno)
     ghost_arr[pos_ghost]=real_min;
 
   }
+  // test debug 
+  if(CheckArrNum(ghost_arr,MAP_GHOST_MAX_ENTRIES,MAP_GHOST_NUM_ENTRIES)){
+    printf("ghost arr curr_num is %d, count num is%d",CheckArrNum(ghost_arr,MAP_GHOST_MAX_ENTRIES),MAP_GHOST_NUM_ENTRIES,MAP_GHOST_NUM_ENTRIES);
+    assert(0);
+  }
+
+  if(CheckArrNum(real_arr,MAP_REAL_MAX_ENTRIES,MAP_REAL_NUM_ENTRIES)){
+    printf("real arr curr_num is %d, count num is%d",CheckArrNum(real_arr,MAP_REAL_MAX_ENTRIES,MAP_REAL_NUM_ENTRIES),MAP_REAL_NUM_ENTRIES);
+    assert(0);
+  }
+
 }
 
 void DFTL_Hit_Real_CMT(int blkno)
