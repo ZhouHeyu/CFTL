@@ -592,6 +592,9 @@ void init_arr()
   for( i = 0; i < CACHE_MAX_ENTRIES; i++) {
       cache_arr[i] = 0;
 
+  MAP_REAL_NUM_ENTRIES=0;
+  MAP_SECOND_NUM_ENTRIES=0;
+  MAP_SEQ_NUM_ENTRIES=0;
 
   }
 /*
@@ -857,6 +860,9 @@ void DFTL_init_arr()
   for( i = 0; i < MAP_REAL_MAX_ENTRIES; i++) {
       real_arr[i] = 0;
   }
+
+  MAP_REAL_NUM_ENTRIES=0;
+  MAP_GHOST_NUM_ENTRIES=0;
 }
 
 void DFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
@@ -888,9 +894,11 @@ void DFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
           write_ratio = (write_cnt*1.0)/request_cnt;//写请求比例
           read_ratio = (read_cnt*1.0)/request_cnt;  //读请求比列 
           average_request_size = (total_request_size*1.0)/itemcount;//请求平均大小
-          MAP_REAL_MAX_ENTRIES=4096;
+          // test debug 100
+          MAP_REAL_MAX_ENTRIES=100;
           real_arr=(int *)malloc(sizeof(int)*MAP_REAL_MAX_ENTRIES);
-          MAP_GHOST_MAX_ENTRIES=822;
+          // test debug 100
+          MAP_GHOST_MAX_ENTRIES=100;
           ghost_arr=(int *)malloc(sizeof(int)*MAP_GHOST_MAX_ENTRIES);
           DFTL_init_arr();                             
         }
