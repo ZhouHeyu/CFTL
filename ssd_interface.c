@@ -380,6 +380,10 @@ void initFlash()
   blk_t total_MLC_extr_blk_num;
 
   // total number of sectors    
+  // total_until_sect_num 和total_extra_blk_num都是宏定义在disksim_global.h中
+  //   #define total_SLC_util_sect_num  1048576//1048576 --->(2k) 4096个块  512MB
+  // #define total_SLC_extra_sect_num  32768//32768 -->(2k)  128个空闲块 16MB
+  // 所以在配置文件应该配置为2G，保证MLC有1.5GB左右的剩余地址
   total_util_sect_num  = flash_numblocks;
   total_extra_sect_num = flash_extrblocks;
   total_MLC_util_sect_num  = total_util_sect_num-total_SLC_util_sect_num;
