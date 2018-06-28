@@ -170,11 +170,12 @@ void CPFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag);
  *         author:zhoujie     CPFTL 封装的相关函数
  * *******************************************************/
 void MLC_find_second_max();
+void Hit_HCMT(int blkno,int operation);
 void C_CMT_Is_Full();
 void H_CMT_Is_Full();
 void load_entry_into_C_CMT(int blkno,int operation);
 void load_CCMT_or_SCMT_to_HCMT(int blkno,int operation);
-
+void CPFTL_pre_load_entry_into_SCMT(int *pageno,int *req_size,int operation);
 
 /***********************************************************************
   Cache
@@ -680,6 +681,7 @@ void find_MC_entries(int *arr, int size)//find_MC_entries(second_arr,MAP_SECOND_
 //	return i;
 }
 
+//~处理之后所有的请求映射项都不在CMT中才预取 
 int not_in_cache(unsigned int pageno)
 {
 	int flag = 0;
@@ -1276,6 +1278,7 @@ void pre_load_entry_into_SCMT(int *pageno,int *req_size,int operation)
 		int pos=-1,min_real,pos_2nd=-1;
 		int blkno=(*pageno),cnt=(*req_size);
 		if(not_in_cache(blkno)){
+			//~ blkno entry not in CMT need pre_load  
 				MLC_opagemap[blkno].map_age++;
 				if((MAP_SEQ_MAX_ENTRIES-MAP_SEQ_NUM_ENTRIES)==0)
 				{
@@ -1356,6 +1359,7 @@ void pre_load_entry_into_SCMT(int *pageno,int *req_size,int operation)
 				*pageno=blkno;
 
 		}
+	   
 	   else{
 					if((MAP_REAL_MAX_ENTRIES - MAP_REAL_NUM_ENTRIES) == 0)
 					{
@@ -1546,11 +1550,10 @@ void CPFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
             load_CCMT_or_SCMT_to_HCMT(blkno,operation);
             blkno++;
             
-          }
-           //~ 注释掉试试 
-          else if((cnt+1) >= THRESHOLD){
+          }else if((cnt+1) >= THRESHOLD){
             // 3. THRESHOLD=2,表示大于或等于4KB的请求，当作连续请求来处理。
-
+            //内部对blkno和cnt做了更新
+				CPFTL_pre_load_entry_into_SCMT(&blkno,&cnt,operation);
           }
           else{
             //4. opagemap not in SRAM  must think about if map table in SRAM(C-CMT) is full
@@ -1559,7 +1562,9 @@ void CPFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
             load_entry_into_C_CMT(blkno,operation);
             blkno++;
           }
+          //CMT中的各种情况处理完毕
       }
+      //MLC中的映射关系处理完毕
 	}
 
 
@@ -1636,6 +1641,111 @@ void H_CMT_Is_Full()
 
     
 }
+
+
+void CPFTL_pre_load_entry_into_SCMT(int *pageno,int *req_size,int operation)
+{
+	int blkno=(*pageno),cnt=(*req_size);
+	int pos=-1,free_pos=-1;
+	
+	if(not_in_cache(blkno)){
+		//~满足之后连续的pre_num个数的映射项不在CMT中才预取 
+		if((MAP_SEQ_MAX_ENTRIES-MAP_SEQ_NUM_ENTRIES)==0){
+			//~如果seq_arr满了
+			 for(indexofarr = 0;indexofarr < NUM_ENTRIES_PER_TIME;indexofarr++){
+					//SEQ的替换策略是把SEQ的最前面几个映射项剔除出去，查看是否存在更新页，存在一个更新页，整个翻译页都得重新更细，update_flag置位
+					if((MLC_opagemap[seq_arr[indexofarr]].update == 1)&&(MLC_opagemap[seq_arr[indexofarr]].map_status == MAP_SEQ))
+					{
+						//update_reqd++;
+						update_flag=1;
+						MLC_opagemap[seq_arr[indexofarr]].update=0;
+						MLC_opagemap[seq_arr[indexofarr]].map_status = MAP_INVALID;
+						MLC_opagemap[seq_arr[indexofarr]].map_age = 0;
+					}
+					else if((MLC_opagemap[seq_arr[indexofarr]].update == 0)&&(MLC_opagemap[seq_arr[indexofarr]].map_status ==MAP_SEQ))
+					{
+						MLC_opagemap[seq_arr[indexofarr]].map_status = MAP_INVALID;
+						MLC_opagemap[seq_arr[indexofarr]].map_age = 0;
+					}
+				}
+				if(update_flag == 1)
+				{
+					//~这里的NUM_ENTRIES_PER_TIME必须远小于一个页
+						send_flash_request(((seq_arr[0]-MLC_page_num_for_2nd_map_table)/MLC_MAP_ENTRIES_PER_PAGE)*8,8,1,2,1);
+						translation_read_num++;
+						send_flash_request(((seq_arr[0]-MLC_page_num_for_2nd_map_table)/MLC_MAP_ENTRIES_PER_PAGE)*8,8,0,2,1);
+						translation_write_num++;
+						update_flag=0;
+				}
+				//~ 根据FIFO移动数组数据覆盖 
+				for(indexofarr = 0;indexofarr <= MAP_SEQ_MAX_ENTRIES-1-NUM_ENTRIES_PER_TIME; indexofarr++)
+						seq_arr[indexofarr] = seq_arr[indexofarr+NUM_ENTRIES_PER_TIME];
+				MAP_SEQ_NUM_ENTRIES-=NUM_ENTRIES_PER_TIME;
+			}
+			//~ 剔除依据FIFO完毕 ，开始预取
+			flash_hit++;
+			send_flash_request(((blkno-MLC_page_num_for_2nd_map_table)/MLC_MAP_ENTRIES_PER_PAGE)*8, 8, 1, 2,1);
+			translation_read_num++;
+			for(indexofseq=0; indexofseq < NUM_ENTRIES_PER_TIME;indexofseq++)//NUM_ENTRIES_PER_TIME在这里表示一次加载4个映射表信息
+			{
+				MLC_opagemap[blkno+indexofseq].map_status=MAP_SEQ;
+				MLC_opagemap[blkno+indexofseq].map_age=sys_time;
+				sys_time++;
+				//~对应的seq命中转移数据页应该不能删除原来的数据 
+				seq_arr[MAP_SEQ_NUM_ENTRIES] = (blkno+indexofseq);//加载到SEQ的映射项是放在SEQ尾部
+				MAP_SEQ_NUM_ENTRIES++;
+			}
+			if(MAP_SEQ_NUM_ENTRIES > MAP_SEQ_MAX_ENTRIES)
+			{
+				printf("The sequential cache is overflow!\n");
+				exit(0);
+			}
+			//~  对数据页读取写入操作更新 
+			if(operation==0)
+				{
+						write_count++;
+						MLC_opagemap[blkno].update=1;
+				}
+				else
+						read_count++;
+				send_flash_request(blkno*8,8,operation,1,1);
+
+				blkno++;
+				sequential_count = 0;
+				//之后连续的请求因为映射加载完成直接读取写入操作
+				for(;(cnt>0)&&(sequential_count<NUM_ENTRIES_PER_TIME-1);cnt--)
+				{
+					MLC_opagemap[blkno].map_age++;
+					cache_scmt_hit++;
+					if(operation==0)
+					{
+						write_count++;
+						MLC_opagemap[blkno].update=1;
+					}
+					else
+						read_count++;
+					send_flash_request(blkno*8,8,operation,1,1);
+					blkno++;
+					rqst_cnt++;
+					sequential_count++;
+				}
+				
+				//zhoujie
+				*req_size=cnt;
+				*pageno=blkno;
+			
+	}else{
+		//~反之只是将其一个映射项加载到CCMT中 (根据前面的删选，只能是不存在CMT的映射项)
+		C_CMT_Is_Full();
+		load_entry_into_C_CMT(blkno,operation);
+		blkno++;
+		//zhoujie
+		*req_size=cnt;
+		*pageno=blkno;	
+	}
+	//连续加载处理完成
+}
+
 
 void load_entry_into_C_CMT(int blkno,int operation)
 {
@@ -1717,13 +1827,14 @@ void load_CCMT_or_SCMT_to_HCMT(int blkno,int operation)
 
   }else if(MLC_opagemap[blkno].map_status==MAP_SEQ){
     // seq的最大时间是根据real
-    pos=search_table(seq_arr,MAP_SEQ_MAX_ENTRIES,blkno);
-    if(pos==-1){
-      printf("can not find blkno :%d in seq_arr\n",blkno);
-      assert(0);
-    }
-    seq_arr[pos]=0;
-    MAP_SEQ_NUM_ENTRIES--;
+    // seq命中的映射项不迁移，保留等待被覆盖
+    //~ pos=search_table(seq_arr,MAP_SEQ_MAX_ENTRIES,blkno);
+    //~ if(pos==-1){
+      //~ printf("can not find blkno :%d in seq_arr\n",blkno);
+      //~ assert(0);
+    //~ }
+    //~ seq_arr[pos]=0;
+    //~ MAP_SEQ_NUM_ENTRIES--;
     free_pos=find_free_pos(real_arr,MAP_REAL_MAX_ENTRIES);
                   if(free_pos==-1){
       printf("can not find free pos in real_arr\n");
