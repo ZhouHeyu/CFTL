@@ -895,10 +895,10 @@ void DFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
           read_ratio = (read_cnt*1.0)/request_cnt;  //读请求比列 
           average_request_size = (total_request_size*1.0)/itemcount;//请求平均大小
           // test debug 100
-          MAP_REAL_MAX_ENTRIES=100;
+          MAP_REAL_MAX_ENTRIES=4096;
           real_arr=(int *)malloc(sizeof(int)*MAP_REAL_MAX_ENTRIES);
           // test debug 100
-          MAP_GHOST_MAX_ENTRIES=100;
+          MAP_GHOST_MAX_ENTRIES=821;
           ghost_arr=(int *)malloc(sizeof(int)*MAP_GHOST_MAX_ENTRIES);
           DFTL_init_arr();                             
         }
