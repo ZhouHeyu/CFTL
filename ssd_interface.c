@@ -1535,6 +1535,8 @@ void CPFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
           // 此处开始SDFTL函数的逻辑
           if(MLC_opagemap[blkno].map_status==MAP_REAL){
             // 1. req in H-CMT
+            Hit_HCMT(blkno,operation);
+            blkno++;
           }else if(MLC_opagemap[blkno].map_status==MAP_SECOND || MLC_opagemap[blkno].map_status==MAP_SEQ){
             // 2. req in C-CMT or S-CMT
             // load H-CMT is full
@@ -1545,11 +1547,11 @@ void CPFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
             blkno++;
             
           }
-          //~  注释掉试试 
-          //~ else if((cnt+1) >= THRESHOLD){
-            //~ // 3. THRESHOLD=2,表示大于或等于4KB的请求，当作连续请求来处理。
-//~ 
-          //~ }
+           //~ 注释掉试试 
+          else if((cnt+1) >= THRESHOLD){
+            // 3. THRESHOLD=2,表示大于或等于4KB的请求，当作连续请求来处理。
+
+          }
           else{
             //4. opagemap not in SRAM  must think about if map table in SRAM(C-CMT) is full
             C_CMT_Is_Full();
@@ -1582,6 +1584,22 @@ void MLC_find_second_max()
     }
   }
 
+}
+
+void Hit_HCMT(int blkno,int operation)
+{
+	MLC_opagemap[blkno].map_status=MAP_REAL;
+	MLC_opagemap[blkno].map_age=sys_time;
+	sys_time++;
+	  // write or read data page 
+ 	  if(operation==0){
+			write_count++;
+			MLC_opagemap[blkno].update = 1;
+		}
+	  else
+			read_count++;
+
+		send_flash_request(blkno*8, 8, operation, 1,1); 
 }
 
 void H_CMT_Is_Full()
