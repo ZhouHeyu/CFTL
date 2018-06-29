@@ -2010,14 +2010,18 @@ void C_CMT_Is_Full()
 			if(MLC_opagemap[offset].map_status==MAP_SECOND){
 				if(search_table(second_arr,MAP_SECOND_MAX_ENTRIES,offset)==-1){
 					printf("after CCMT delete is failded\n");
-					assert(0);
+					MLC_opagemap[offset].map_status=MAP_INVALID;
+          MLC_opagemap[offset].map_age=0;
+          MLC_opagemap[offset].update=0;
+          //assert(0);
 				}
 			}
 		}
 
         
         
-    }
+  }//if ccmt is full end
+
 }
 
 
