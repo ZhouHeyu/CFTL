@@ -209,7 +209,7 @@ int CheckArrNum(int * arr,int max_num,int curr_num)
 
 int MLC_CheckArrStatus(int *arr,int max_num,int flag)
 {
-	int i;
+	int i,j,pos=-1;
 	for(i=0;i<max_num;i++){
 		if(arr[i]>0){
 			if(MLC_opagemap[arr[i]].map_status!=flag){
@@ -220,6 +220,20 @@ int MLC_CheckArrStatus(int *arr,int max_num,int flag)
 
 		}
 	}
+/*
+	// fu za du guo gao
+	for(j=0;j<MLC_opagemap_num;j++){
+		if(MLC_opagemap[j].map_status==flag){
+			pos=search_table(arr,max_num,j);
+			if(pos==-1){
+				printf("MLC_opagemap[%d].map_status is flag:%d,but not in arr\n",j,flag);
+				return -2;
+			}
+		}
+	}
+*/
+	
+	
 	return 0;
 }
 
@@ -1607,48 +1621,81 @@ void CPFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
             // 1. req in H-CMT
             Hit_HCMT(blkno,operation);
 			//debug test
-			if(MLC_CheckArrStatus(second_arr,MAP_SECOND_MAX_ENTRIES,MAP_SECOND)==-1){
+			if(MLC_CheckArrStatus(second_arr,MAP_SECOND_MAX_ENTRIES,MAP_SECOND)!=0){
 				printf("second_arr status error int req in H_CMT");
 				assert(0);
 			}
             blkno++;
           }else if(MLC_opagemap[blkno].map_status==MAP_SECOND || MLC_opagemap[blkno].map_status==MAP_SEQ){
             // 2. req in C-CMT or S-CMT
-			// debug test
-			if(MLC_CheckArrStatus(second_arr,MAP_SECOND_MAX_ENTRIES,MAP_SECOND)==-1){
-				printf("before  second_arr status error");
-				assert(0);
-			}
             // load H-CMT is full
+
+			//debug test
+			if(MLC_opagemap[blkno].map_status==MAP_SECOND){
+				if(search_table(second_arr,MAP_SECOND_MAX_ENTRIES,blkno)==-1){
+					printf("before second arr is error\n");
+					assert(0);
+				}
+			}
+            
             MLC_opagemap[blkno].map_age=sys_time;
             sys_time++;
             H_CMT_Is_Full();
+
+
+            //debug test
+			if(MLC_opagemap[blkno].map_status==MAP_SECOND){
+				if(search_table(second_arr,MAP_SECOND_MAX_ENTRIES,blkno)==-1){
+					printf("after second arr is error\n");
+					assert(0);
+				}
+			}
+            
             load_CCMT_or_SCMT_to_HCMT(blkno,operation);
             blkno++;
 
-			//debug test
-			if(MLC_CheckArrStatus(second_arr,MAP_SECOND_MAX_ENTRIES,MAP_SECOND)==-1){
-				printf("after second_arr status error");
-				assert(0);
-			}
-
           }
-		  else if((cnt+1) >= THRESHOLD){
-
+		  else if((cnt+1) >=10 ){
+			//THRESHOLD=10
             // 3. THRESHOLD=2,表示大于或等于4KB的请求，当作连续请求来处理
             //内部对blkno和cnt做了更新
+				// debug
+				int last_cnt=cnt;
+				int last_blkno=blkno;
+				
 				CPFTL_pre_load_entry_into_SCMT(&blkno,&cnt,operation);
+
+				//debug test
+				if(cnt>0){
+					int i=0;
+					for(i=0;i<=last_cnt;i++){
+						last_blkno++;
+						if(MLC_opagemap[last_blkno].map_status==MAP_SECOND){
+							if(search_table(second_arr,MAP_SECOND_MAX_ENTRIES,last_blkno)==-1){
+								printf("error happend after CPFTL_pre_load_entry_into_SCMT\n");
+								printf("second_arr not include %d",last_blkno);
+								assert(0);
+							}
+						}
+					}
+				}
+				//debug test
+				
           }
           else{
             //4. opagemap not in SRAM  must think about if map table in SRAM(C-CMT) is full
             C_CMT_Is_Full();
             // load entry into C_CMT
             load_entry_into_C_CMT(blkno,operation);
-			//debug test
-			if(MLC_CheckArrStatus(second_arr,MAP_SECOND_MAX_ENTRIES,MAP_SECOND)==-1){
-				printf("second_arr status error int req in H_CMT");
-				assert(0);
+
+            //debug test
+            if(MLC_opagemap[blkno].map_status==MAP_SECOND){
+				if(search_table(second_arr,MAP_SECOND_MAX_ENTRIES,blkno)==-1){
+					printf("load new-entry into second arr is failed\n");
+					assert(0);
+				}
 			}
+
             blkno++;
           }
           //CMT中的各种情况处理完毕
@@ -1703,8 +1750,8 @@ void H_CMT_Is_Full()
   if((MAP_REAL_MAX_ENTRIES - MAP_REAL_NUM_ENTRIES) == 0){  
 				min_real = MLC_find_real_min();
 				if(MLC_opagemap[min_real].update == 1){
-            C_CMT_Is_Full();
-            //将H-CMT中更新的映射项剔除到C-CMT中
+						C_CMT_Is_Full();
+						//将H-CMT中更新的映射项剔除到C-CMT中
 						MLC_opagemap[min_real].map_status = MAP_SECOND;
 						pos = search_table(real_arr,MAP_REAL_MAX_ENTRIES,min_real);
 						real_arr[pos]=0;
@@ -1870,6 +1917,17 @@ void load_entry_into_C_CMT(int blkno,int operation)
 			read_count++;
 
 		send_flash_request(blkno*8, 8, operation, 1,1); 
+	
+	// debug test 
+	if(MLC_opagemap[blkno].map_status!=MAP_SECOND){
+		printf("not set MLC_opagemap flag\n");
+		assert(0);
+	}
+	if(search_table(second_arr,MAP_SECOND_MAX_ENTRIES,blkno)==-1){
+		printf("not play lpn-entry:%d into CMT\n");
+		assert(0);
+	}
+		
 }
 
 // C-CMT之后要修改
@@ -1877,6 +1935,8 @@ void C_CMT_Is_Full()
 {
     // int min_second=-1;
     // min_second=MLC_find_second_min();
+	int i=0;
+	int offset=0;
     // 若果满了,先选择关联度最大进行删除
     if(MAP_SECOND_MAX_ENTRIES-MAP_SECOND_NUM_ENTRIES==0){
       MC=0;
@@ -1894,7 +1954,22 @@ void C_CMT_Is_Full()
             second_arr[indexold]=0;
             MAP_SECOND_NUM_ENTRIES--;
           }
-        }
+		}
+
+		
+		//debug test
+		for(i=0;i<MLC_MAP_ENTRIES_PER_PAGE;i++){
+			offset=i+MLC_page_num_for_2nd_map_table;
+			if(MLC_opagemap[maxentry*MLC_MAP_ENTRIES_PER_PAGE+offset].map_status==MAP_SECOND){
+				if(search_table(second_arr,MAP_SECOND_MAX_ENTRIES,maxentry*MLC_MAP_ENTRIES_PER_PAGE+offset)==-1){
+					printf("CCMT delete is failded\n");
+					//assert(0);
+				}
+			}
+		}
+
+        
+        
     }
 }
 
