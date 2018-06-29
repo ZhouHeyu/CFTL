@@ -1591,7 +1591,8 @@ void CPFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
           MAP_REAL_MAX_ENTRIES=100;
           // real_arr 当做H-CMT使用
           real_arr=(int *)malloc(sizeof(int)*MAP_REAL_MAX_ENTRIES);
-          MAP_SEQ_MAX_ENTRIES=1536;
+          // test_debug -->old 1536
+          MAP_SEQ_MAX_ENTRIES=160;
           // seq_arr当做S-CMT使用 
           seq_arr=(int *)malloc(sizeof(int)*MAP_SEQ_MAX_ENTRIES); 
 		  //test set 100
