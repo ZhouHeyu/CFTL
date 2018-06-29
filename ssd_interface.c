@@ -182,7 +182,7 @@ void CPFTL_pre_load_entry_into_SCMT(int *pageno,int *req_size,int operation);
 ***********************************************************************/
 int CheckArrNum(int * arr,int max_num,int curr_num);
 int  MLC_CheckArrStatus(int *arr,int max_num,int flag);
-
+int MLC_find_second_min();
 /***********************************************************************
   Cache
  ***********************************************************************/
@@ -1930,7 +1930,7 @@ void load_entry_into_C_CMT(int blkno,int operation)
 		
 }
 
-void MLC_find_second_min()
+int MLC_find_second_min()
 {
   int i,index; 
   int temp = 99999999;
