@@ -1898,15 +1898,15 @@ void load_entry_into_C_CMT(int blkno,int operation)
 	translation_read_num++;
 	MLC_opagemap[blkno].map_status = MAP_SECOND;
 
-    MLC_opagemap[blkno].map_age=sys_time;
-    sys_time++;
+  MLC_opagemap[blkno].map_age=sys_time;
+  sys_time++;
 	free_pos=find_free_pos(second_arr,MAP_SECOND_MAX_ENTRIES);
-    if(free_pos==-1){
+  if(free_pos==-1){
       printf("can not find free pos in second_arr\n");
       assert(0);
-    }
+  }
 	second_arr[free_pos]=blkno;
-    MAP_SECOND_NUM_ENTRIES++;
+  MAP_SECOND_NUM_ENTRIES++;
 
   // write or read data page 
  	  if(operation==0){
@@ -1928,6 +1928,24 @@ void load_entry_into_C_CMT(int blkno,int operation)
 		assert(0);
 	}
 		
+}
+
+void MLC_find_second_min()
+{
+  int i,index; 
+  int temp = 99999999;
+
+  for(i=0; i < MAP_SECOND_MAX_ENTRIES; i++) {
+    if(second_arr[i]>0){
+        if(MLC_opagemap[second_arr[i]].map_age <= temp) {
+            real_min = second_arr[i];
+            temp = MLC_opagemap[second_arr[i]].map_age;
+            index = i;
+        }
+    }
+
+  }
+  return second_min;  
 }
 
 // C-CMT之后要修改
