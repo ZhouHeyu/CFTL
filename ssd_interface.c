@@ -1073,7 +1073,7 @@ void DFTL_Hit_Ghost_CMT(int blkno)
   }
   // test debug 
   if(CheckArrNum(ghost_arr,MAP_GHOST_MAX_ENTRIES,MAP_GHOST_NUM_ENTRIES)){
-    printf("ghost arr curr_num is %d, count num is%d",CheckArrNum(ghost_arr,MAP_GHOST_MAX_ENTRIES),MAP_GHOST_NUM_ENTRIES,MAP_GHOST_NUM_ENTRIES);
+    printf("ghost arr curr_num is %d, count num is%d",CheckArrNum(ghost_arr,MAP_GHOST_MAX_ENTRIES,MAP_GHOST_NUM_ENTRIES),MAP_GHOST_NUM_ENTRIES);
     assert(0);
   }
 
