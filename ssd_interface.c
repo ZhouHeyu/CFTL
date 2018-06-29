@@ -181,6 +181,7 @@ void CPFTL_pre_load_entry_into_SCMT(int *pageno,int *req_size,int operation);
  *                    debug function
 ***********************************************************************/
 int CheckArrNum(int * arr,int max_num,int curr_num);
+int  MLC_CheckArrStatus(int *arr,int max_num,int flag);
 
 /***********************************************************************
   Cache
@@ -205,6 +206,23 @@ int CheckArrNum(int * arr,int max_num,int curr_num)
 
   return flag;
 }
+
+int MLC_CheckArrStatus(int *arr,int max_num,int flag)
+{
+	int i;
+	for(i=0;i<max_num;i++){
+		if(arr[i]>0){
+			if(MLC_opagemap[arr[i]].map_status!=flag){
+				printf("LPN:%d MLC_opagemap[arr[%d]].map_status != flag :%d\n",arr[i],i,flag);
+				return -1;
+
+			}
+
+		}
+	}
+	return 0;
+}
+
 
 
 // Interface between disksim & fsim 
@@ -1587,18 +1605,36 @@ void CPFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
           if(MLC_opagemap[blkno].map_status==MAP_REAL){
             // 1. req in H-CMT
             Hit_HCMT(blkno,operation);
+			//debug test
+			if(MLC_CheckArrStatus(second_arr,MAP_SECOND_MAX_ENTRIES,MAP_SECOND)==-1){
+				printf("second_arr status error int req in H_CMT");
+				assert(0);
+			}
             blkno++;
           }else if(MLC_opagemap[blkno].map_status==MAP_SECOND || MLC_opagemap[blkno].map_status==MAP_SEQ){
             // 2. req in C-CMT or S-CMT
+			// debug test
+			if(MLC_CheckArrStatus(second_arr,MAP_SECOND_MAX_ENTRIES,MAP_SECOND)==-1){
+				printf("before  second_arr status error");
+				assert(0);
+			}
             // load H-CMT is full
             MLC_opagemap[blkno].map_age=sys_time;
             sys_time++;
             H_CMT_Is_Full();
             load_CCMT_or_SCMT_to_HCMT(blkno,operation);
             blkno++;
-            
-          }else if((cnt+1) >= THRESHOLD){
-            // 3. THRESHOLD=2,表示大于或等于4KB的请求，当作连续请求来处理。
+
+			//debug test
+			if(MLC_CheckArrStatus(second_arr,MAP_SECOND_MAX_ENTRIES,MAP_SECOND)==-1){
+				printf("after second_arr status error");
+				assert(0);
+			}
+
+          }
+		  else if((cnt+1) >= THRESHOLD){
+
+            // 3. THRESHOLD=2,表示大于或等于4KB的请求，当作连续请求来处理
             //内部对blkno和cnt做了更新
 				CPFTL_pre_load_entry_into_SCMT(&blkno,&cnt,operation);
           }
@@ -1607,6 +1643,11 @@ void CPFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
             C_CMT_Is_Full();
             // load entry into C_CMT
             load_entry_into_C_CMT(blkno,operation);
+			//debug test
+			if(MLC_CheckArrStatus(second_arr,MAP_SECOND_MAX_ENTRIES,MAP_SECOND)==-1){
+				printf("second_arr status error int req in H_CMT");
+				assert(0);
+			}
             blkno++;
           }
           //CMT中的各种情况处理完毕
@@ -1674,6 +1715,12 @@ void H_CMT_Is_Full()
 						//debug
 						if(MAP_SECOND_NUM_ENTRIES > MAP_SECOND_MAX_ENTRIES){
 							printf("The second cache is overflow!\n");
+							assert(0);
+						}
+
+						//debug test
+						if(MLC_opagemap[min_real].map_status==MAP_SECOND && search_table(second_arr,MAP_SECOND_MAX_ENTRIES,min_real)==-1){
+							printf("not reset min_real into second_arr\n",min_real);
 							assert(0);
 						}
         }else{
