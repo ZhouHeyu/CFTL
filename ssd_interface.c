@@ -1984,10 +1984,10 @@ void C_CMT_Is_Full()
           if(((second_arr[indexold]-MLC_page_num_for_2nd_map_table)/MLC_MAP_ENTRIES_PER_PAGE) == maxentry){
             //test debug
             curr_lpn=second_arr[indexold];
-            printf("curr_lpn is %d\tindex_old is %d\n 
-                    MLC_page_num for_2nd_map_table is %d\tMLC_MAP_ENTRIES_PER_PAGE is %d\n
-                    maxentry is %d\n",
-                      curr_lpn,indexold,MLC_page_num_for_2nd_map_table,MLC_MAP_ENTRIES_PER_PAGE,maxentry);
+            // printf("curr_lpn is %d\tindex_old is %d\n 
+            //         MLC_page_num for_2nd_map_table is %d\tMLC_MAP_ENTRIES_PER_PAGE is %d\n
+            //         maxentry is %d\n",
+            //           curr_lpn,indexold,MLC_page_num_for_2nd_map_table,MLC_MAP_ENTRIES_PER_PAGE,maxentry);
 
             
             MLC_opagemap[curr_lpn].map_status=MAP_INVALID;
