@@ -180,7 +180,7 @@ void CPFTL_pre_load_entry_into_SCMT(int *pageno,int *req_size,int operation);
 /***********************************************************************
  *                    debug function
 ***********************************************************************/
-int CheckArrNum(int * arr,int max_num ,int curr_num);
+int CheckArrNum(int * arr,int max_num,int curr_num);
 
 /***********************************************************************
   Cache
@@ -189,7 +189,7 @@ int cache_min = -1;
 int cache_max = 0;
 
 // vaild_value >0
-int CheckArrNum(int * arr，int max_num ,int curr_num)
+int CheckArrNum(int * arr,int max_num,int curr_num)
 {
   int flag=0;
   int cnt=0,i;
