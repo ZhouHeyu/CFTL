@@ -1955,6 +1955,7 @@ void C_CMT_Is_Full()
     // min_second=MLC_find_second_min();
 	int i=0;
 	int offset=0;
+  int curr_lpn=-1;
     // 若果满了,先选择关联度最大进行删除
     if(MAP_SECOND_MAX_ENTRIES-MAP_SECOND_NUM_ENTRIES==0){
       MC=0;
@@ -1981,11 +1982,23 @@ void C_CMT_Is_Full()
       //sencond_arr数组里面存的是lpn,将翻译页关联的映射项全部置为无效
       for(indexold = 0;indexold < MAP_SECOND_MAX_ENTRIES; indexold++){
           if(((second_arr[indexold]-MLC_page_num_for_2nd_map_table)/MLC_MAP_ENTRIES_PER_PAGE) == maxentry){
-            MLC_opagemap[second_arr[indexold]].update = 0;
-            MLC_opagemap[second_arr[indexold]].map_status = MAP_INVALID;
-            MLC_opagemap[second_arr[indexold]].map_age = 0;
+            //test debug
+            printf("curr_lpn is %d\tindex_old is %d\n 
+                    MLC_page_num for_2nd_map_table is %d\tMLC_MAP_ENTRIES_PER_PAGE is %d\n
+                    maxentry is %d\n",
+                      curr_lpn,indexold,,MLC_page_num_for_2nd_map_table,MLC_MAP_ENTRIES_PER_PAGE,maxentry);
+
+            curr_lpn=second_arr[indexold];
+            MLC_opagemap[curr_lpn].map_status=MAP_INVALID;
+            MLC_opagemap[curr_lpn].map_age=0;
+            MLC_opagemap[curr_lpn].update=0;
             second_arr[indexold]=0;
             MAP_SECOND_NUM_ENTRIES--;
+            // MLC_opagemap[second_arr[indexold]].update = 0;
+            // MLC_opagemap[second_arr[indexold]].map_status = MAP_INVALID;
+            // MLC_opagemap[second_arr[indexold]].map_age = 0;
+            // second_arr[indexold]=0;
+            // MAP_SECOND_NUM_ENTRIES--;
           }
 		}
 
