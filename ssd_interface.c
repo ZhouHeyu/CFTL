@@ -1945,6 +1945,20 @@ void C_CMT_Is_Full()
       translation_read_num++;
       send_flash_request(maxentry*8,8,0,2,1);
       translation_write_num++;
+
+			//debug test
+		for(i=0;i<MLC_MAP_ENTRIES_PER_PAGE;i++){
+			offset=i+MLC_page_num_for_2nd_map_table+maxentry*MLC_MAP_ENTRIES_PER_PAGE;
+			if(MLC_opagemap[offset].map_status==MAP_SECOND){
+				if(search_table(second_arr,MAP_SECOND_MAX_ENTRIES,offset)==-1){
+					printf("before CCMT delete is failded\n");
+					assert(0);
+				}
+			}
+		}
+	
+
+      
       //sencond_arr数组里面存的是lpn,将翻译页关联的映射项全部置为无效
       for(indexold = 0;indexold < MAP_SECOND_MAX_ENTRIES; indexold++){
           if(((second_arr[indexold]-MLC_page_num_for_2nd_map_table)/MLC_MAP_ENTRIES_PER_PAGE) == maxentry){
@@ -1959,11 +1973,11 @@ void C_CMT_Is_Full()
 		
 		//debug test
 		for(i=0;i<MLC_MAP_ENTRIES_PER_PAGE;i++){
-			offset=i+MLC_page_num_for_2nd_map_table;
-			if(MLC_opagemap[maxentry*MLC_MAP_ENTRIES_PER_PAGE+offset].map_status==MAP_SECOND){
-				if(search_table(second_arr,MAP_SECOND_MAX_ENTRIES,maxentry*MLC_MAP_ENTRIES_PER_PAGE+offset)==-1){
-					printf("CCMT delete is failded\n");
-					//assert(0);
+			offset=i+MLC_page_num_for_2nd_map_table+maxentry*MLC_MAP_ENTRIES_PER_PAGE;
+			if(MLC_opagemap[offset].map_status==MAP_SECOND){
+				if(search_table(second_arr,MAP_SECOND_MAX_ENTRIES,offset)==-1){
+					printf("after CCMT delete is failded\n");
+					assert(0);
 				}
 			}
 		}
