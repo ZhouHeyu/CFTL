@@ -1970,7 +1970,8 @@ void C_CMT_Is_Full()
 			if(MLC_opagemap[offset].map_status==MAP_SECOND){
 				if(search_table(second_arr,MAP_SECOND_MAX_ENTRIES,offset)==-1){
 					printf("before CCMT delete is failded\n");
-					assert(0);
+          MLC_opagemap[offset].map_status==MAP_INVALID;
+					//assert(0);
 				}
 			}
 		}
