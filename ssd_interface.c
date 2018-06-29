@@ -1938,7 +1938,7 @@ int MLC_find_second_min()
   for(i=0; i < MAP_SECOND_MAX_ENTRIES; i++) {
     if(second_arr[i]>0){
         if(MLC_opagemap[second_arr[i]].map_age <= temp) {
-            real_min = second_arr[i];
+            second_min = second_arr[i];
             temp = MLC_opagemap[second_arr[i]].map_age;
             index = i;
         }
