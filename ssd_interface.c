@@ -1622,12 +1622,6 @@ void CPFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
           if(MLC_opagemap[blkno].map_status==MAP_REAL){
             // 1. req in H-CMT
             Hit_HCMT(blkno,operation);
-			//~ //debug test
-			//~ if(MLC_CheckArrStatus(second_arr,MAP_SECOND_MAX_ENTRIES,MAP_SECOND)!=0){
-				//~ printf("second_arr status error int req in H_CMT");
-				//~ assert(0);
-			//~ }
-			
             blkno++;
           }else if(MLC_opagemap[blkno].map_status==MAP_SECOND || MLC_opagemap[blkno].map_status==MAP_SEQ){
             // 2. req in C-CMT or S-CMT
@@ -1640,7 +1634,7 @@ void CPFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
 					assert(0);
 				}
 			}
-            
+
           if(MLC_opagemap[blkno].map_status==MAP_SECOND){
             move_CCMT_to_HCMT(blkno,operation);
           }else if(MLC_opagemap[blkno].map_status==MAP_SEQ){
@@ -2044,7 +2038,7 @@ void load_entry_into_C_CMT(int blkno,int operation)
 		assert(0);
 	}
 	if(search_table(second_arr,MAP_SECOND_MAX_ENTRIES,blkno)==-1){
-		printf("not play lpn-entry:%d into CMT\n");
+		printf("not play lpn-entry:%d into CMT\n",blkno);
 		assert(0);
 	}
 		
@@ -2091,7 +2085,7 @@ void C_CMT_Is_Full(int req_lpn)
 			if(MLC_opagemap[offset].map_status==MAP_SECOND){
 				if(search_table(second_arr,MAP_SECOND_MAX_ENTRIES,offset)==-1){
 					printf("before CCMT delete is failded\n");
-					MLC_opagemap[offset].map_status==MAP_INVALID;
+					MLC_opagemap[offset].map_status=MAP_INVALID;
 					//assert(0);
 				}
 			}
