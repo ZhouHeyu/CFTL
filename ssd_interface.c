@@ -1642,7 +1642,7 @@ void CPFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
 			}
             
           if(MLC_opagemap[blkno].map_status==MAP_SECOND){
-            move_CCMT_to_HCMT(blkno.operation);
+            move_CCMT_to_HCMT(blkno,operation);
           }else if(MLC_opagemap[blkno].map_status==MAP_SEQ){
             move_SCMT_to_HCMT(blkno,operation);
           }else{
