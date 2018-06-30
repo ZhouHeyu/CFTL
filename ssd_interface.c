@@ -1796,7 +1796,9 @@ void H_CMT_Is_Full(int req_lpn)
 // 因为CPFTL命中CCMT加载到H-CMT中的逻辑存在混乱，故重新定义一个加载函数
 void move_CCMT_to_HCMT(int req_lpn,int operation)
 {
-  int flag=-1，min_real,pos=-1,pos_2nd=-1,free_pos=-1;
+  int min_real;
+  int flag=-1;
+  int pos=-1,pos_2nd=-1,free_pos=-1;
   int temp;
   int limit_start=-1,limit_end=-1;
   pos_2nd=search_table(second_arr,MAP_SECOND_MAX_ENTRIES,req_lpn);
