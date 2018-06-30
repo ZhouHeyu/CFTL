@@ -110,7 +110,7 @@ unsigned int total_num_of_req = 0;
 /***********************************************************************
   Mapping table
  ***********************************************************************/
- int sys_time=0;
+ int operation_time=0;
 int real_min = -1;
 int real_max = 0;
 int ghost_min=-1;
@@ -1737,8 +1737,8 @@ void MLC_find_second_max()
 void Hit_HCMT(int blkno,int operation)
 {
 	MLC_opagemap[blkno].map_status=MAP_REAL;
-	MLC_opagemap[blkno].map_age=sys_time;
-	sys_time++;
+	MLC_opagemap[blkno].map_age=operation_time;
+	operation_time++;
 	  // write or read data page 
  	  if(operation==0){
 			write_count++;
@@ -1838,8 +1838,8 @@ void CPFTL_pre_load_entry_into_SCMT(int *pageno,int *req_size,int operation)
 			for(indexofseq=0; indexofseq < NUM_ENTRIES_PER_TIME;indexofseq++)//NUM_ENTRIES_PER_TIME在这里表示一次加载4个映射表信息
 			{
 				MLC_opagemap[blkno+indexofseq].map_status=MAP_SEQ;
-				MLC_opagemap[blkno+indexofseq].map_age=sys_time;
-				sys_time++;
+				MLC_opagemap[blkno+indexofseq].map_age=operation_time;
+				operation_time++;
 				//~对应的seq命中转移数据页应该不能删除原来的数据 
 				seq_arr[MAP_SEQ_NUM_ENTRIES] = (blkno+indexofseq);//加载到SEQ的映射项是放在SEQ尾部
 				MAP_SEQ_NUM_ENTRIES++;
@@ -1905,8 +1905,8 @@ void load_entry_into_C_CMT(int blkno,int operation)
 	translation_read_num++;
 	MLC_opagemap[blkno].map_status = MAP_SECOND;
 
-  MLC_opagemap[blkno].map_age=sys_time;
-  sys_time++;
+  MLC_opagemap[blkno].map_age=operation_time;
+  operation_time++;
 	free_pos=find_free_pos(second_arr,MAP_SECOND_MAX_ENTRIES);
   if(free_pos==-1){
       printf("can not find free pos in second_arr\n");
@@ -2038,8 +2038,8 @@ void move_CCMT_to_HCMT(int req_lpn,int operation)
             second_arr[pos_2nd]=real_min;
             real_arr[pos]=req_lpn;
             MLC_opagemap[req_lpn].map_status=MAP_REAL;
-            MLC_opagemap[req_lpn].map_age=sys_time;
-            sys_time++;
+            MLC_opagemap[req_lpn].map_age=operation_time;
+            operation_time++;
         }else{
             // 没有更新直接剔除到flash
             pos = search_table(real_arr,MAP_REAL_MAX_ENTRIES,min_real);
@@ -2051,8 +2051,8 @@ void move_CCMT_to_HCMT(int req_lpn,int operation)
             real_arr[pos]=req_lpn;
             MLC_opagemap[req_lpn].map_status=MAP_REAL;
             MAP_REAL_NUM_ENTRIES++;
-            MLC_opagemap[req_lpn].map_age=sys_time;
-            sys_time++;
+            MLC_opagemap[req_lpn].map_age=operation_time;
+            operation_time++;
             second_arr[pos_2nd]=0;
             MAP_SECOND_NUM_ENTRIES--;
 
@@ -2076,8 +2076,8 @@ void move_CCMT_to_HCMT(int req_lpn,int operation)
         real_arr[free_pos]=req_lpn;
         MAP_REAL_NUM_ENTRIES++;
         MLC_opagemap[req_lpn].map_status=MAP_REAL;
-        MLC_opagemap[req_lpn].map_age=sys_time;
-        sys_time++;
+        MLC_opagemap[req_lpn].map_age=operation_time;
+        operation_time++;
 
     }
     //data page operation
@@ -2104,8 +2104,8 @@ void move_SCMT_to_HCMT(int blkno ,int operation)
     }
     real_arr[free_pos]=blkno;
     MLC_opagemap[blkno].map_status=MAP_REAL;
-    MLC_opagemap[blkno].map_age=sys_time;
-    sys_time++;
+    MLC_opagemap[blkno].map_age=operation_time;
+    operation_time++;
     MAP_REAL_NUM_ENTRIES++;
     //operation data pages
     if(operation==0){
