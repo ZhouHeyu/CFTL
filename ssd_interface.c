@@ -1751,7 +1751,7 @@ void H_CMT_Is_Full(int  req_lpn)
   if((MAP_REAL_MAX_ENTRIES - MAP_REAL_NUM_ENTRIES) == 0){  
 				min_real = MLC_find_real_min();
 				if(MLC_opagemap[min_real].update == 1){
-						C_CMT_Is_Full(int req_lpn);
+						C_CMT_Is_Full(req_lpn);
 						//将H-CMT中更新的映射项剔除到C-CMT中
 						MLC_opagemap[min_real].map_status = MAP_SECOND;
 						pos = search_table(real_arr,MAP_REAL_MAX_ENTRIES,min_real);
