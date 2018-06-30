@@ -1991,7 +1991,8 @@ void C_CMT_Is_Full(int req_lpn)
             //           curr_lpn,indexold,MLC_page_num_for_2nd_map_table,MLC_MAP_ENTRIES_PER_PAGE,maxentry);
 			if(curr_lpn==req_lpn){
 				printf("req_lpn == delete lpn  %d !\n",curr_lpn);
-				assert(0);
+				//assert(0);
+				continue;
 				}
             
             MLC_opagemap[curr_lpn].map_status=MAP_INVALID;
@@ -1999,11 +2000,7 @@ void C_CMT_Is_Full(int req_lpn)
             MLC_opagemap[curr_lpn].update=0;
             second_arr[indexold]=0;
             MAP_SECOND_NUM_ENTRIES--;
-            // MLC_opagemap[second_arr[indexold]].update = 0;
-            // MLC_opagemap[second_arr[indexold]].map_status = MAP_INVALID;
-            // MLC_opagemap[second_arr[indexold]].map_age = 0;
-            // second_arr[indexold]=0;
-            // MAP_SECOND_NUM_ENTRIES--;
+
           }
 		}
 
