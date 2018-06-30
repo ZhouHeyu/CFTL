@@ -1752,7 +1752,7 @@ void H_CMT_Is_Full(int  req_lpn)
 				min_real = MLC_find_real_min();
 				if(MLC_opagemap[min_real].update == 1){
 						C_CMT_Is_Full(req_lpn);
-						//将H-CMT中更新的映射项剔除到C-CMT中
+						//将H-CMT中更新的映射项剔除到C-CMT中,如果命中的req_lpn在second_arr中
 						MLC_opagemap[min_real].map_status = MAP_SECOND;
 						pos = search_table(real_arr,MAP_REAL_MAX_ENTRIES,min_real);
 						real_arr[pos]=0;
@@ -1762,7 +1762,7 @@ void H_CMT_Is_Full(int  req_lpn)
 						second_arr[pos_2nd]=min_real;
 						MAP_SECOND_NUM_ENTRIES++;
 						//debug
-						if(MAP_SECOND_NUM_ENTRIES > MAP_SECOND_MAX_ENTRIES){
+						if(MAP_SECOND_NUM_ENTRIES > MAP_SECOND_MAX_ENTRIES+2){
 							printf("The second cache is overflow!\n");
 							assert(0);
 						}
