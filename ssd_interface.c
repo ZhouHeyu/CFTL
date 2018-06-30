@@ -1618,7 +1618,7 @@ void CPFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
           init_arr();                             
         }
           rqst_cnt++;
-          // 此处开始SDFTL函数的逻辑
+          // 此处开始CPFTL函数的逻辑
           if(MLC_opagemap[blkno].map_status==MAP_REAL){
             // 1. req in H-CMT
             Hit_HCMT(blkno,operation);
@@ -1641,7 +1641,8 @@ void CPFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
 			}
 
               if(MLC_opagemap[blkno].map_status==MAP_SECOND){
-                  move_CCMT_to_HCMT(blkno,operation);
+                  //move_CCMT_to_HCMT(blkno,operation);
+
               }else if(MLC_opagemap[blkno].map_status==MAP_SEQ){
                   move_SCMT_to_HCMT(blkno,operation);
               }else{
@@ -2029,7 +2030,7 @@ void move_CCMT_to_HCMT(int req_lpn,int operation)
     }
     //处理掉特殊情况
     if(flag!=-1 && MAP_REAL_NUM_ENTRIES == MAP_REAL_MAX_ENTRIES){
-        printf("real is full and CCMT hit need to load entry to  HCMT\n");
+        //printf("real is full and CCMT hit need to load entry to  HCMT\n");
         real_min=MLC_find_real_min();
         if(MLC_opagemap[min_real].update==1){
             // 直接交换两者的位置
