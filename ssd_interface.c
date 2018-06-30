@@ -1751,7 +1751,7 @@ void Hit_HCMT(int blkno,int operation)
 		send_flash_request(blkno*8, 8, operation, 1,1); 
 }
 
-void H_CMT_Is_Full(int  req_lpn)
+void H_CMT_Is_Full(int req_lpn)
 {
   int min_real,pos=-1,pos_2nd=-1;
   // 查看H_CMT是否满了
@@ -1776,7 +1776,7 @@ void H_CMT_Is_Full(int  req_lpn)
 
 						//debug test
 						if(MLC_opagemap[min_real].map_status==MAP_SECOND && search_table(second_arr,MAP_SECOND_MAX_ENTRIES,min_real)==-1){
-							printf("not reset min_real into second_arr\n",min_real);
+							printf("not reset min_real %d into second_arr\n",min_real);
 							assert(0);
 						}
         }else{
