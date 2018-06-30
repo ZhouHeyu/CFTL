@@ -1803,6 +1803,7 @@ void move_CCMT_to_HCMT(int req_lpn,int operation)
   int limit_start=-1,limit_end=-1;
   pos_2nd=search_table(second_arr,MAP_SECOND_MAX_ENTRIES,req_lpn);
 
+  MC=0;
   find_MC_entries(second_arr,MAP_SECOND_MAX_ENTRIES);
   limit_start=maxentry*MLC_MAP_ENTRIES_PER_PAGE+MLC_page_num_for_2nd_map_table;
   limit_end=(maxentry+1)*MLC_MAP_ENTRIES_PER_PAGE+MLC_page_num_for_2nd_map_table;
