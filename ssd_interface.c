@@ -1993,6 +1993,12 @@ void move_CCMT_to_HCMT(int req_lpn,int operation)
     int flag=-1,real_min,pos=-1,pos_2nd=-1,free_pos=-1;
 //    int temp;
     int limit_start=-1,limit_end=-1;
+
+    //debug-value
+    int last_second;
+    int last_real;
+
+
     pos_2nd=search_table(second_arr,MAP_SECOND_MAX_ENTRIES,req_lpn);
 
     MC=0;
@@ -2035,6 +2041,8 @@ void move_CCMT_to_HCMT(int req_lpn,int operation)
         //特殊情况处理完毕
     }else{
         //其他情况依旧采用之前的置换策略；
+        last_real=MAP_REAL_NUM_ENTRIES;
+        last_second=MAP_SECOND_NUM_ENTRIES;
         H_CMT_Is_Full();
         pos=search_table(second_arr,MAP_SECOND_MAX_ENTRIES,req_lpn);
         if(pos==-1){
