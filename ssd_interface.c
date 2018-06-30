@@ -1641,7 +1641,7 @@ void CPFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
 //			}
 
               if(MLC_opagemap[blkno].map_status==MAP_SECOND){
-                  //move_CCMT_to_HCMT(blkno,operation);
+                  move_CCMT_to_HCMT(blkno,operation);
 
               }else if(MLC_opagemap[blkno].map_status==MAP_SEQ){
                   move_SCMT_to_HCMT(blkno,operation);
@@ -1776,7 +1776,7 @@ void H_CMT_Is_Full()
 
 						//debug test
 						if(MLC_opagemap[min_real].map_status==MAP_SECOND && search_table(second_arr,MAP_SECOND_MAX_ENTRIES,min_real)==-1){
-							printf("not reset min_real into second_arr\n",min_real);
+							printf("not reset min_real:%d into second_arr\n",min_real);
 							assert(0);
 						}
         }else{
@@ -1932,7 +1932,7 @@ void load_entry_into_C_CMT(int blkno,int operation)
 		assert(0);
 	}
 	if(search_table(second_arr,MAP_SECOND_MAX_ENTRIES,blkno)==-1){
-		printf("not play lpn-entry:%d into CMT\n");
+		printf("not play lpn-entry:%d into CMT\n",blkno);
 		assert(0);
 	}
 		
@@ -1962,7 +1962,7 @@ void C_CMT_Is_Full()
     // int min_second=-1;
     // min_second=MLC_find_second_min();
 	int i=0;
-	int offset=0;
+//	int offset=0;
     // 若果满了,先选择关联度最大进行删除
     if(MAP_SECOND_MAX_ENTRIES-MAP_SECOND_NUM_ENTRIES==0){
       MC=0;
@@ -1990,8 +1990,8 @@ void C_CMT_Is_Full()
 // 因为CPFTL命中CCMT加载到H-CMT中的逻辑存在混乱，故重新定义一个加载函数
 void move_CCMT_to_HCMT(int req_lpn,int operation)
 {
-    int flag=-1,min_real,pos=-1,pos_2nd=-1,free_pos=-1;
-    int temp;
+    int flag=-1,real_min,pos=-1,pos_2nd=-1,free_pos=-1;
+//    int temp;
     int limit_start=-1,limit_end=-1;
     pos_2nd=search_table(second_arr,MAP_SECOND_MAX_ENTRIES,req_lpn);
 
@@ -2006,10 +2006,10 @@ void move_CCMT_to_HCMT(int req_lpn,int operation)
     if(flag!=-1 && MAP_REAL_NUM_ENTRIES == MAP_REAL_MAX_ENTRIES){
         //printf("real is full and CCMT hit need to load entry to  HCMT\n");
         real_min=MLC_find_real_min();
-        if(MLC_opagemap[min_real].update==1){
+        if(MLC_opagemap[real_min].update==1){
             // 直接交换两者的位置
-            pos = search_table(real_arr,MAP_REAL_MAX_ENTRIES,min_real);
-            MLC_opagemap[min_real].map_status = MAP_SECOND;
+            pos = search_table(real_arr,MAP_REAL_MAX_ENTRIES,real_min);
+            MLC_opagemap[real_min].map_status = MAP_SECOND;
             second_arr[pos_2nd]=real_min;
             real_arr[pos]=req_lpn;
             MLC_opagemap[req_lpn].map_status=MAP_REAL;
@@ -2017,10 +2017,10 @@ void move_CCMT_to_HCMT(int req_lpn,int operation)
             operation_time++;
         }else{
             // 没有更新直接剔除到flash
-            pos = search_table(real_arr,MAP_REAL_MAX_ENTRIES,min_real);
+            pos = search_table(real_arr,MAP_REAL_MAX_ENTRIES,real_min);
             real_arr[pos]=0;
-            MLC_opagemap[min_real].map_status = MAP_INVALID;
-            MLC_opagemap[min_real].map_age = 0;
+            MLC_opagemap[real_min].map_status = MAP_INVALID;
+            MLC_opagemap[real_min].map_age = 0;
             MAP_REAL_NUM_ENTRIES--;
             //将real_arr[pos]存放刚刚命中的lpn
             real_arr[pos]=req_lpn;
