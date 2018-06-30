@@ -1641,7 +1641,7 @@ void CPFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
             
             MLC_opagemap[blkno].map_age=sys_time;
             sys_time++;
-            H_CMT_Is_Full();
+            H_CMT_Is_Full(blkno);
             load_CCMT_or_SCMT_to_HCMT(blkno,operation);
 
             
@@ -1685,7 +1685,7 @@ void CPFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
           }
           else{
             //4. opagemap not in SRAM  must think about if map table in SRAM(C-CMT) is full
-            C_CMT_Is_Full();
+            C_CMT_Is_Full(blkno);
             // load entry into C_CMT
             load_entry_into_C_CMT(blkno,operation);
 
@@ -1879,7 +1879,7 @@ void CPFTL_pre_load_entry_into_SCMT(int *pageno,int *req_size,int operation)
 			
 	}else{
 		//~反之只是将其一个映射项加载到CCMT中 (根据前面的删选，只能是不存在CMT的映射项)
-		C_CMT_Is_Full();
+		C_CMT_Is_Full(blkno);
 		load_entry_into_C_CMT(blkno,operation);
 		blkno++;
 		//zhoujie
