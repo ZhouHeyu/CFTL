@@ -849,9 +849,9 @@ double callFsim(unsigned int secno, int scount, int operation,int flash_flag)
 		 // SDFTL scheme
 		 //SDFTL_Scheme(&blkno,&cnt,operation,flash_flag);
 		// DFTL scheme
-		//DFTL_Scheme(&blkno,&cnt,operation,flash_flag);
+		DFTL_Scheme(&blkno,&cnt,operation,flash_flag);
 		// CPFTL scheme
-		      CPFTL_Scheme(&blkno,&cnt,operation,flash_flag);
+		      //CPFTL_Scheme(&blkno,&cnt,operation,flash_flag);
               break;
         }//end-switch
 
