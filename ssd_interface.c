@@ -171,8 +171,8 @@ void CPFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag);
  * *******************************************************/
 void MLC_find_second_max();
 void Hit_HCMT(int blkno,int operation);
-void C_CMT_Is_Full();
-void H_CMT_Is_Full();
+void C_CMT_Is_Full(int req_lpn);
+void H_CMT_Is_Full(int req_lpn);
 void load_entry_into_C_CMT(int blkno,int operation);
 void load_CCMT_or_SCMT_to_HCMT(int blkno,int operation);
 void CPFTL_pre_load_entry_into_SCMT(int *pageno,int *req_size,int operation);
@@ -1642,20 +1642,18 @@ void CPFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
             MLC_opagemap[blkno].map_age=sys_time;
             sys_time++;
             H_CMT_Is_Full();
-
-
-
-            
             load_CCMT_or_SCMT_to_HCMT(blkno,operation);
-            blkno++;
+
             
-                        //debug test
+              //debug test
 			if(MLC_opagemap[blkno].map_status==MAP_SECOND){
 				if(search_table(second_arr,MAP_SECOND_MAX_ENTRIES,blkno)==-1){
 					printf("after second arr is error\n");
 					assert(0);
 				}
 			}
+			
+			blkno++;
 
           }
 		  else if((cnt+1) >=10 ){
@@ -1746,14 +1744,14 @@ void Hit_HCMT(int blkno,int operation)
 		send_flash_request(blkno*8, 8, operation, 1,1); 
 }
 
-void H_CMT_Is_Full()
+void H_CMT_Is_Full(int  req_lpn)
 {
   int min_real,pos=-1,pos_2nd=-1;
   // 查看H_CMT是否满了
   if((MAP_REAL_MAX_ENTRIES - MAP_REAL_NUM_ENTRIES) == 0){  
 				min_real = MLC_find_real_min();
 				if(MLC_opagemap[min_real].update == 1){
-						C_CMT_Is_Full();
+						C_CMT_Is_Full(int req_lpn);
 						//将H-CMT中更新的映射项剔除到C-CMT中
 						MLC_opagemap[min_real].map_status = MAP_SECOND;
 						pos = search_table(real_arr,MAP_REAL_MAX_ENTRIES,min_real);
@@ -1952,7 +1950,7 @@ int MLC_find_second_min()
 }
 
 // C-CMT之后要修改
-void C_CMT_Is_Full()
+void C_CMT_Is_Full(int req_lpn)
 {
     // int min_second=-1;
     // min_second=MLC_find_second_min();
@@ -1974,7 +1972,7 @@ void C_CMT_Is_Full()
 			if(MLC_opagemap[offset].map_status==MAP_SECOND){
 				if(search_table(second_arr,MAP_SECOND_MAX_ENTRIES,offset)==-1){
 					printf("before CCMT delete is failded\n");
-          MLC_opagemap[offset].map_status==MAP_INVALID;
+					MLC_opagemap[offset].map_status==MAP_INVALID;
 					//assert(0);
 				}
 			}
@@ -1991,7 +1989,10 @@ void C_CMT_Is_Full()
             //         MLC_page_num for_2nd_map_table is %d\tMLC_MAP_ENTRIES_PER_PAGE is %d\n
             //         maxentry is %d\n",
             //           curr_lpn,indexold,MLC_page_num_for_2nd_map_table,MLC_MAP_ENTRIES_PER_PAGE,maxentry);
-
+			if(curr_lpn==req_lpn){
+				printf("req_lpn == delete lpn  %d !\n",curr_lpn);
+				assert(0);
+				}
             
             MLC_opagemap[curr_lpn].map_status=MAP_INVALID;
             MLC_opagemap[curr_lpn].map_age=0;
