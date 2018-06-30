@@ -1620,11 +1620,12 @@ void CPFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
           if(MLC_opagemap[blkno].map_status==MAP_REAL){
             // 1. req in H-CMT
             Hit_HCMT(blkno,operation);
-			//debug test
-			if(MLC_CheckArrStatus(second_arr,MAP_SECOND_MAX_ENTRIES,MAP_SECOND)!=0){
-				printf("second_arr status error int req in H_CMT");
-				assert(0);
-			}
+			//~ //debug test
+			//~ if(MLC_CheckArrStatus(second_arr,MAP_SECOND_MAX_ENTRIES,MAP_SECOND)!=0){
+				//~ printf("second_arr status error int req in H_CMT");
+				//~ assert(0);
+			//~ }
+			
             blkno++;
           }else if(MLC_opagemap[blkno].map_status==MAP_SECOND || MLC_opagemap[blkno].map_status==MAP_SEQ){
             // 2. req in C-CMT or S-CMT
@@ -1643,16 +1644,18 @@ void CPFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
             H_CMT_Is_Full();
 
 
-            //debug test
+
+            
+            load_CCMT_or_SCMT_to_HCMT(blkno,operation);
+            blkno++;
+            
+                        //debug test
 			if(MLC_opagemap[blkno].map_status==MAP_SECOND){
 				if(search_table(second_arr,MAP_SECOND_MAX_ENTRIES,blkno)==-1){
 					printf("after second arr is error\n");
 					assert(0);
 				}
 			}
-            
-            load_CCMT_or_SCMT_to_HCMT(blkno,operation);
-            blkno++;
 
           }
 		  else if((cnt+1) >=10 ){
@@ -2065,7 +2068,7 @@ void load_CCMT_or_SCMT_to_HCMT(int blkno,int operation)
     MLC_opagemap[blkno].map_status=MAP_REAL;
     MAP_REAL_NUM_ENTRIES++;
   }else{
-    //printf("should not come here\n");
+    printf("should not come here\n");
     //assert(0);
   }
 
