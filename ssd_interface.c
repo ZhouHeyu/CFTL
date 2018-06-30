@@ -1633,12 +1633,12 @@ void CPFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
             // load H-CMT is full
 
 			//debug test
-			if(MLC_opagemap[blkno].map_status==MAP_SECOND){
-				if(search_table(second_arr,MAP_SECOND_MAX_ENTRIES,blkno)==-1){
-					printf("before second arr is error\n");
-					assert(0);
-				}
-			}
+//			if(MLC_opagemap[blkno].map_status==MAP_SECOND){
+//				if(search_table(second_arr,MAP_SECOND_MAX_ENTRIES,blkno)==-1){
+//					printf("before second arr is error\n");
+//					assert(0);
+//				}
+//			}
 
               if(MLC_opagemap[blkno].map_status==MAP_SECOND){
                   //move_CCMT_to_HCMT(blkno,operation);
@@ -1653,12 +1653,12 @@ void CPFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
 
 
             //debug test
-			if(MLC_opagemap[blkno].map_status==MAP_SECOND){
-				if(search_table(second_arr,MAP_SECOND_MAX_ENTRIES,blkno)==-1){
-					printf("after second arr is error\n");
-					assert(0);
-				}
-			}
+//			if(MLC_opagemap[blkno].map_status==MAP_SECOND){
+//				if(search_table(second_arr,MAP_SECOND_MAX_ENTRIES,blkno)==-1){
+//					printf("after second arr is error\n");
+//					assert(0);
+//				}
+//			}
 
             blkno++;
 
