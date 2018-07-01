@@ -131,6 +131,7 @@ int block_index = 0;
 int block_entry_num = 0;
 int blocksize = init_size;//LRU块列表中初始块的个数*/
 
+int zhou_flag=0;
 /***********************************************************************
  *    author: zhoujie
  *  封装 callFsim的代码函数
@@ -944,7 +945,7 @@ void DFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
             read_count++;
           blkno++;
       }else{
-        if (itemcount==itemcount_threshold){
+        if (itemcount==itemcount_threshold&&zhou_flag==0){
           //重要的初始化在此初始化
           request_cnt = rqst_cnt;
           write_cnt = write_count;
@@ -958,7 +959,8 @@ void DFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
           // test debug 100
           MAP_GHOST_MAX_ENTRIES=821;
           ghost_arr=(int *)malloc(sizeof(int)*MAP_GHOST_MAX_ENTRIES);
-          DFTL_init_arr();                             
+          DFTL_init_arr();
+            zhou_flag=1;
         }
         
         rqst_cnt++;
@@ -1158,7 +1160,7 @@ void DFTL_Hit_Real_CMT(int blkno)
       }
       else{
 
-        if (itemcount==itemcount_threshold){
+        if (itemcount==itemcount_threshold && zhou_flag==0){
           request_cnt = rqst_cnt;
           write_cnt = write_count;
           read_cnt = read_count;
@@ -1175,7 +1177,8 @@ void DFTL_Hit_Real_CMT(int blkno)
           seq_arr=(int *)malloc(sizeof(int)*MAP_SEQ_MAX_ENTRIES); 
           MAP_SECOND_MAX_ENTRIES=2560; 
           second_arr=(int *)malloc(sizeof(int)*MAP_SECOND_MAX_ENTRIES); 
-          init_arr();                             
+          init_arr();
+            zhou_flag=1;
         }
           rqst_cnt++;
           //duchenjie:no ghost
@@ -1594,28 +1597,30 @@ void CPFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
       }
       else{
 
-        if (itemcount==itemcount_threshold){
-          request_cnt = rqst_cnt;
-          write_cnt = write_count;
-          read_cnt = read_count;
-          write_ratio = (write_cnt*1.0)/request_cnt;//写请求比例
-          read_ratio = (read_cnt*1.0)/request_cnt;  //读请求比列 
+        if (itemcount==itemcount_threshold&&zhou_flag==0){
+//            为了配合warm时候的CMT已经加载，所以需要一个标识符zhou_flag来跳过这个初始化函数
+            request_cnt = rqst_cnt;
+            write_cnt = write_count;
+            read_cnt = read_count;
+            write_ratio = (write_cnt*1.0)/request_cnt;//写请求比例
+            read_ratio = (read_cnt*1.0)/request_cnt;  //读请求比列
           
-          average_request_size = (total_request_size*1.0)/itemcount;//请求平均大小
+            average_request_size = (total_request_size*1.0)/itemcount;//请求平均大小
 
 		  //test set 100
-          MAP_REAL_MAX_ENTRIES=100;
+            MAP_REAL_MAX_ENTRIES=100;
           // real_arr 当做H-CMT使用
-          real_arr=(int *)malloc(sizeof(int)*MAP_REAL_MAX_ENTRIES);
+            real_arr=(int *)malloc(sizeof(int)*MAP_REAL_MAX_ENTRIES);
           // test_debug -->old 1536
-          MAP_SEQ_MAX_ENTRIES=160;
+            MAP_SEQ_MAX_ENTRIES=160;
           // seq_arr当做S-CMT使用 
-          seq_arr=(int *)malloc(sizeof(int)*MAP_SEQ_MAX_ENTRIES); 
+            seq_arr=(int *)malloc(sizeof(int)*MAP_SEQ_MAX_ENTRIES);
 		  //test set 100
-          MAP_SECOND_MAX_ENTRIES=100;
+            MAP_SECOND_MAX_ENTRIES=100;
           // second_arr当做C-CMT使用 
-          second_arr=(int *)malloc(sizeof(int)*MAP_SECOND_MAX_ENTRIES); 
-          init_arr();                             
+            second_arr=(int *)malloc(sizeof(int)*MAP_SECOND_MAX_ENTRIES);
+            init_arr();
+            zhou_flag=1;
         }
           rqst_cnt++;
           // 此处开始CPFTL函数的逻辑
