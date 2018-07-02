@@ -655,62 +655,57 @@ static ioreq_event * iotrace_ascii_get_ioreq_event_1 (FILE *tracefile, ioreq_eve
       }      
    }*/
      printf("th的值：%d\n ",th);
-      sblkno=new->blkno;
-       sbcount=((new->blkno+ new->bcount-1)/4 - (new->blkno)/4 + 1) * 4;
-       sblkno /= 4;
-       sblkno *= 4;
-       cnt= (sblkno+ sbcount-1)/4 - (sblkno)/4 + 1;            
-       if(new->bcount<=th){
-         if(RWs<=RWm){
-            if(new->blkno>=1048544){
-               new->blkno=new->blkno-1048544;
-            }          
-            new->flash_op_flag=0;
-            new->bcount=((new->blkno+ new->bcount-1)/4 - (new->blkno)/4 + 1) * 4;
-            new->blkno /= 4;
-            new->blkno *= 4;
-         }else{
-            ssblkno=new->blkno;
-            if(ssblkno>=1048544){
-               ssblkno=ssblkno-1048544;
-            }
-            if(SLC_opagemap[ssblkno/4].free==0)
-						{
-							if(new->blkno>=1048544){
-                new->blkno=new->blkno-1048544;
-              }            
+     sblkno=new->blkno;
+     sbcount=((new->blkno+ new->bcount-1)/4 - (new->blkno)/4 + 1) * 4;
+     sblkno /= 4;
+     sblkno *= 4;
+     cnt= (sblkno+ sbcount-1)/4 - (sblkno)/4 + 1;
+     if(new->bcount<=th){
+        if(RWs<=RWm){
+           if(new->blkno>=1048544){
+              new->blkno=new->blkno-1048544;
+           }
+           new->flash_op_flag=0;
+           new->bcount=((new->blkno+ new->bcount-1)/4 - (new->blkno)/4 + 1) * 4;
+           new->blkno /= 4;
+           new->blkno *= 4;
+        }else{
+           ssblkno=new->blkno;
+           if(ssblkno>=1048544){
+              ssblkno=ssblkno-1048544;
+           }
+           if(SLC_opagemap[ssblkno/4].free==0) {
+              if(new->blkno>=1048544){
+                 new->blkno=new->blkno-1048544;
+              }
               new->flash_op_flag=0;
               new->bcount=((new->blkno+ new->bcount-1)/4 - (new->blkno)/4 + 1) * 4;
               new->blkno /= 4;
               new->blkno *= 4;
-            }else{
-              
+           }else{
               new->flash_op_flag=1;
               new->bcount = ((new->blkno+ new->bcount-1)/8 - (new->blkno)/8 + 1) * 8;
               new->blkno /= 8;
               new->blkno *= 8;
-            }
-         }
-      }else{       
-         new->flash_op_flag=1;
-         new->bcount = ((new->blkno+ new->bcount-1)/8 - (new->blkno)/8 + 1) * 8;
-         new->blkno /= 8;
-         new->blkno *= 8;
-      }
-  
-    
-  }else{       
-         new->flash_op_flag=1;
-         new->bcount = ((new->blkno+ new->bcount-1)/8 - (new->blkno)/8 + 1) * 8;
-         new->blkno /= 8;
-         new->blkno *= 8;
-      
+           }
+        }
+     }else{
+        new->flash_op_flag=1;
+        new->bcount = ((new->blkno+ new->bcount-1)/8 - (new->blkno)/8 + 1) * 8;
+        new->blkno /= 8;
+        new->blkno *= 8;
+     }
+  }else{
+     new->flash_op_flag=1;
+     new->bcount = ((new->blkno+ new->bcount-1)/8 - (new->blkno)/8 + 1) * 8;
+     new->blkno /= 8;
+     new->blkno *= 8;
   }
-   if (new->flags & ASYNCHRONOUS) {
-      new->flags |= (new->flags & READ) ? TIME_LIMITED : 0;
-   } else if (new->flags & SYNCHRONOUS) {
-      new->flags |= TIME_CRITICAL;
-   }
+  if (new->flags & ASYNCHRONOUS) {
+     new->flags |= (new->flags & READ) ? TIME_LIMITED : 0;
+  } else if (new->flags & SYNCHRONOUS) {
+     new->flags |= TIME_CRITICAL;
+  }
 
    new->buf = 0;
    new->opid = 0;
