@@ -553,21 +553,24 @@ static ioreq_event * iotrace_ascii_get_ioreq_event_0 (FILE *tracefile, ioreq_eve
    //flashsim
    sbcount = ((new->blkno+ new->bcount-1)/4 - (new->blkno)/4 + 1) * 4;
    mbcount = ((new->blkno+ new->bcount-1)/8 - (new->blkno)/8 + 1) * 8;
-  if(new->bcount<=5){// 4
-   if(new->blkno>=1048544){
+//   小于固定阈值5就直接网SLC写？？
+   if(new->bcount<=5){
+       // 4
+       if(new->blkno>=1048544){
             new->blkno=new->blkno-1048544;
-         }
-   new->bcount=((new->blkno+ new->bcount-1)/4 - (new->blkno)/4 + 1) * 4;
-   new->blkno /= 4;
-   new->blkno *= 4;
-   new->flash_op_flag=0;
+       }
+       new->bcount=((new->blkno+ new->bcount-1)/4 - (new->blkno)/4 + 1) * 4;
+       new->blkno /= 4;
+       new->blkno *= 4;
+       new->flash_op_flag=0;
+   } else{
+       new->bcount=((new->blkno+ new->bcount-1)/8 - (new->blkno)/8 + 1) * 8;
+       new->blkno /= 8;
+       new->blkno *= 8;
+       new->flash_op_flag=1;
    }
-   else{
-   new->bcount=((new->blkno+ new->bcount-1)/8 - (new->blkno)/8 + 1) * 8;
-   new->blkno /= 8;
-   new->blkno *= 8;
-   new->flash_op_flag=1;
- }
+
+
    if (new->flags & ASYNCHRONOUS) {
       new->flags |= (new->flags & READ) ? TIME_LIMITED : 0;
    } else if (new->flags & SYNCHRONOUS) {
