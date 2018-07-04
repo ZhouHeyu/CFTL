@@ -22,6 +22,7 @@
 #define GC_READ_DELAY  READ_DELAY    // gc read_delay = read delay    
 #define GC_WRITE_DELAY WRITE_DELAY  // gc write_delay = write delay 
 
+/***************SLC 和MLC的参数配置************************/
 #define SLC_READ_DELAY        (0.0250)
 #define SLC_WRITE_DELAY       (0.200)
 #define SLC_ERASE_DELAY       1.5 
