@@ -953,11 +953,11 @@ void DFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
           write_ratio = (write_cnt*1.0)/request_cnt;//写请求比例
           read_ratio = (read_cnt*1.0)/request_cnt;  //读请求比列 
           average_request_size = (total_request_size*1.0)/itemcount;//请求平均大小
-          // test debug 100
-          MAP_REAL_MAX_ENTRIES=4096;
+            // CMT value size is 64KB real_arr is 32KB include entry(512 in 2Kpage)
+          MAP_REAL_MAX_ENTRIES=8192;
           real_arr=(int *)malloc(sizeof(int)*MAP_REAL_MAX_ENTRIES);
-          // test debug 100
-          MAP_GHOST_MAX_ENTRIES=821;
+            // ghost_arr is 32KB ,8192 entries
+          MAP_GHOST_MAX_ENTRIES=8192;
           ghost_arr=(int *)malloc(sizeof(int)*MAP_GHOST_MAX_ENTRIES);
           DFTL_init_arr();
             zhou_flag=1;
@@ -1168,14 +1168,16 @@ void DFTL_Hit_Real_CMT(int blkno)
           read_ratio = (read_cnt*1.0)/request_cnt;  //读请求比列 
           
           average_request_size = (total_request_size*1.0)/itemcount;//请求平均大小
-
-          MAP_REAL_MAX_ENTRIES=4096;
+            // CMT 32KB include entry num 8192
+          MAP_REAL_MAX_ENTRIES=8129;
           real_arr=(int *)malloc(sizeof(int)*MAP_REAL_MAX_ENTRIES);
           //MAP_GHOST_MAX_ENTRIES=822;
           //ghost_arr=(int *)malloc(sizeof(int)*MAP_GHOST_MAX_ENTRIES);
-          MAP_SEQ_MAX_ENTRIES=1536; 
-          seq_arr=(int *)malloc(sizeof(int)*MAP_SEQ_MAX_ENTRIES); 
-          MAP_SECOND_MAX_ENTRIES=2560; 
+            // SCMT 12KB include entry num 3072
+          MAP_SEQ_MAX_ENTRIES=3072;
+          seq_arr=(int *)malloc(sizeof(int)*MAP_SEQ_MAX_ENTRIES);
+            // SLCMT 20KB include entry num 5120
+          MAP_SECOND_MAX_ENTRIES=5120;
           second_arr=(int *)malloc(sizeof(int)*MAP_SECOND_MAX_ENTRIES); 
           init_arr();
             zhou_flag=1;
@@ -1607,16 +1609,16 @@ void CPFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
           
             average_request_size = (total_request_size*1.0)/itemcount;//请求平均大小
 
-		  //test set 100
-            MAP_REAL_MAX_ENTRIES=100;
+            //H-CMT 28KB page(2kB 512entries) 7168
+            MAP_REAL_MAX_ENTRIES=7168;
           // real_arr 当做H-CMT使用
             real_arr=(int *)malloc(sizeof(int)*MAP_REAL_MAX_ENTRIES);
-          // test_debug -->old 1536
-            MAP_SEQ_MAX_ENTRIES=160;
+            // S-CMT 16KB 4096
+            MAP_SEQ_MAX_ENTRIES=4096;
           // seq_arr当做S-CMT使用 
             seq_arr=(int *)malloc(sizeof(int)*MAP_SEQ_MAX_ENTRIES);
-		  //test set 100
-            MAP_SECOND_MAX_ENTRIES=100;
+            //C-CMT 20kB  5120
+            MAP_SECOND_MAX_ENTRIES=5120;
           // second_arr当做C-CMT使用 
             second_arr=(int *)malloc(sizeof(int)*MAP_SECOND_MAX_ENTRIES);
             init_arr();
