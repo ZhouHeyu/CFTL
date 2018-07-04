@@ -3,8 +3,8 @@
 # 首先注意清理
 make clean
 # 从github上同步代码
-echo "从github 上同步代码,lab206的git密码为:123456"
-git pull origin master
+echo "从github origin/CPFTL上同步代码,lab206的git密码为:123456"
+git pull origin CPFTL
 #切换目录到上级目录make
 cd ../ ; make
 read -p "if make is successed yes?no" flag
