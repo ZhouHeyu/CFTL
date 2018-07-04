@@ -604,12 +604,13 @@ static ioreq_event * iotrace_ascii_get_ioreq_event_1 (FILE *tracefile, ioreq_eve
 
    //flashsim
    RWs=SLC_stat_erase_num/40960;
-   RWm=MLC_stat_erase_num/4096;
+   //MLC value is 2GB so blk num is 8192
+   RWm=MLC_stat_erase_num/8192;
   // RWs=SLC_stat_erase_num/1000;
   // RWm=MLC_stat_erase_num/100;
    diff=abs(RWs-RWm);
    Es=SLC_stat_erase_num%40960;
-   Em=MLC_stat_erase_num%4096;
+   Em=MLC_stat_erase_num%8192;
    threhold=abs(Es-Em);
    
   if(new->flags==0){ 
