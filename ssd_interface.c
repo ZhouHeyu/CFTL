@@ -850,9 +850,9 @@ double callFsim(unsigned int secno, int scount, int operation,int flash_flag)
 		 // SDFTL scheme
 		 //SDFTL_Scheme(&blkno,&cnt,operation,flash_flag);
 		// DFTL scheme
-		//DFTL_Scheme(&blkno,&cnt,operation,flash_flag);
+			DFTL_Scheme(&blkno,&cnt,operation,flash_flag);
 		// CPFTL scheme
-		      CPFTL_Scheme(&blkno,&cnt,operation,flash_flag);
+		      //CPFTL_Scheme(&blkno,&cnt,operation,flash_flag);
               break;
         }//end-switch
 
@@ -953,11 +953,11 @@ void DFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
           write_ratio = (write_cnt*1.0)/request_cnt;//写请求比例
           read_ratio = (read_cnt*1.0)/request_cnt;  //读请求比列 
           average_request_size = (total_request_size*1.0)/itemcount;//请求平均大小
-          // test debug 100
-          MAP_REAL_MAX_ENTRIES=4096;
+          // CMT value size is 64KB real_arr is 32KB include entry(512 in 2Kpage) 8192
+          MAP_REAL_MAX_ENTRIES=8192;
           real_arr=(int *)malloc(sizeof(int)*MAP_REAL_MAX_ENTRIES);
-          // test debug 100
-          MAP_GHOST_MAX_ENTRIES=821;
+          // ghost_arr is 32KB ,8192 entries
+          MAP_GHOST_MAX_ENTRIES=8192;
           ghost_arr=(int *)malloc(sizeof(int)*MAP_GHOST_MAX_ENTRIES);
           DFTL_init_arr();
             zhou_flag=1;
