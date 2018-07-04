@@ -1607,16 +1607,16 @@ void CPFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
           
             average_request_size = (total_request_size*1.0)/itemcount;//请求平均大小
 
-		  //test set 100
+		  //H-CMT 28KB page(2kB 512entries) 7168
             MAP_REAL_MAX_ENTRIES=100;
           // real_arr 当做H-CMT使用
             real_arr=(int *)malloc(sizeof(int)*MAP_REAL_MAX_ENTRIES);
-          // test_debug -->old 1536
-            MAP_SEQ_MAX_ENTRIES=160;
+          // S-CMT 16KB 4096
+            MAP_SEQ_MAX_ENTRIES=4096;
           // seq_arr当做S-CMT使用 
             seq_arr=(int *)malloc(sizeof(int)*MAP_SEQ_MAX_ENTRIES);
-		  //test set 100
-            MAP_SECOND_MAX_ENTRIES=100;
+		  //C-CMT 20kB  5120
+            MAP_SECOND_MAX_ENTRIES=5120;
           // second_arr当做C-CMT使用 
             second_arr=(int *)malloc(sizeof(int)*MAP_SECOND_MAX_ENTRIES);
             init_arr();
