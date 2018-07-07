@@ -187,7 +187,7 @@ int ADFTL_WINDOW_SIZE=0;
 double ADFTL_Tau=0.3;
 
 void ADFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag);
-ADFTL_init_arr();
+void ADFTL_init_arr();
 void ADFTL_Hit_R_CMT(int blkno,int operation);
 void ADFTL_Cluster_CMT_Is_Full();
 void ADFTL_R_CMT_Is_Full();
@@ -2235,7 +2235,7 @@ void ADFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
 }
 
 
-ADFTL_init_arr()
+void ADFTL_init_arr()
 {
     int i;
     for( i = 0; i < MAP_REAL_MAX_ENTRIES; i++) {
@@ -2356,6 +2356,8 @@ void Insert_Value_In_Arr(int *arr,int size,int pos,int value)
 int ADFTL_Find_Victim_In_RCMT_W()
 {
     int i,clean_flag=0,pos_index=-1,temp_time,Victim_index;
+
+    int *index_arr,*lpn_arr,*Time_arr;
     //32位最大的int值
     int MAXTIME=21474836473;
     //debug
@@ -2365,9 +2367,9 @@ int ADFTL_Find_Victim_In_RCMT_W()
     }
 
     //存的是real_arr的下标索引
-    int * index_arr=(int *)malloc(ADFTL_WINDOW_SIZE*sizeof(int));
-    int * lpn_arr=(int *)malloc(ADFTL_WINDOW_SIZE*sizeof(int));
-    int * Time_arr=(int *)malloc(ADFTL_WINDOW_SIZE*sizeof(int));
+    index_arr=(int *)malloc(ADFTL_WINDOW_SIZE*sizeof(int));
+    lpn_arr=(int *)malloc(ADFTL_WINDOW_SIZE*sizeof(int));
+    Time_arr=(int *)malloc(ADFTL_WINDOW_SIZE*sizeof(int));
     //init
     for(i=0;i<ADFTL_WINDOW_SIZE;i++){
         index_arr[i]=-1;
