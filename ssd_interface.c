@@ -2543,7 +2543,7 @@ void ADFTL_R_CMT_Is_Full()
         }
 
         T2=(unsigned)GetCycleCount();
-        printf("start Select Vicitim--(ADFTL_R_CMT_Is_Full) -Use Time:%f\n",(T2 - T1)*1.0/FREQUENCY);
+        printf("end Select Vicitim--(ADFTL_R_CMT_Is_Full) -Use Time:%f\n",(T2 - T1)*1.0/FREQUENCY);
     }
 
 }
