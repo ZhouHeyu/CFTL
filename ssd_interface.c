@@ -21,6 +21,25 @@
 #include "stdio.h"
 
 
+//导入运算时间测试内联函数
+#if defined (__i386__)
+static __inline__ unsigned long long GetCycleCount(void)
+{
+        unsigned long long int x;
+        __asm__ volatile("rdtsc":"=A"(x));
+        return x;
+}
+#elif defined (__x86_64__)
+static __inline__ unsigned long long GetCycleCount(void)
+{
+  unsigned hi,lo;
+  __asm__ volatile("rdtsc":"=a"(lo),"=d"(hi));
+  return ((unsigned long long)lo)|(((unsigned long long)hi)<<32);
+}
+#endif
+
+
+
 extern int merge_switch_num;
 extern int merge_partial_num;
 extern int merge_full_num;
@@ -195,7 +214,7 @@ void ADFTL_Move_Cluster_CMT_to_RCMT(int req_lpn,int operation);
 void ADFTL_Move_SCMT_to_RCMT(int blkno,int operation);
 void load_entry_into_R_CMT(int blkno,int operation);
 void ADFTL_pre_load_entry_into_SCMT(int *pageno,int *req_size,int operation);
-
+void ADFTL_Read_Hit_ClusterCMT_or_SCMT(int blkno,int operation);
 /***********ADFTL R-CMT is Full 涉及封装的函数***********************/
 int Find_Min_Insert_pos(int * arr,int size,int value);
 void Insert_Value_In_Arr(int *arr,int size,int pos,int value);
@@ -2213,8 +2232,8 @@ void ADFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
                         assert(0);
                     }
                 }else{
-                    //写请求命中项不做转移操作，但需要做数据访问请求处理
-
+                    //读请求命中项不做转移操作，但需要做数据访问请求处理
+                    ADFTL_Read_Hit_ClusterCMT_or_SCMT(blkno,operation);
                 }
             }else if((cnt+1)>=THRESHOLD){
                 // 预取策略
@@ -2277,6 +2296,22 @@ void ADFTL_Hit_R_CMT(int blkno,int operation)
 
     send_flash_request(blkno*8, 8, operation, 1,1);
 
+}
+
+void ADFTL_Read_Hit_ClusterCMT_or_SCMT(int blkno,int operation)
+{
+
+  MLC_opagemap[blkno].map_age=operation_time;
+
+  // write or read data page
+  if(operation==0){
+    write_count++;
+    MLC_opagemap[blkno].update = 1;
+  }
+  else
+    read_count++;
+
+  send_flash_request(blkno*8, 8, operation, 1,1);
 }
 
 
