@@ -41,7 +41,8 @@ static __inline__ unsigned long long GetCycleCount(void)
 
 #define FREQUENCY 1800
 
-
+//运行测试时间的变量
+unsigned long t1,t2;
 
 extern int merge_switch_num;
 extern int merge_partial_num;
@@ -2167,7 +2168,6 @@ void ADFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
 {
     int blkno=(*pageno),cnt=(*req_size);
 
-    //运行测试时间的变量
     unsigned long t1,t2;
 
     int pos=-1,free_pos=-1;
@@ -2277,10 +2277,12 @@ void ADFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
                 //第一次加载的数据到R-CMT中
                 ADFTL_R_CMT_Is_Full();
                 load_entry_into_R_CMT(blkno,operation);
+              t2=(unsigned long) GetCycleCount();
+              printf("end first data into Cluster_CMT -Use Time:%f\n",(t2 - t1)*1.0/FREQUENCY);
+
             }
 
-            t2=(unsigned long) GetCycleCount();
-            printf("end first data into Cluster_CMT -Use Time:%f\n",(t2 - t1)*1.0/FREQUENCY);
+
 
         }
 
@@ -2364,6 +2366,10 @@ void ADFTL_Cluster_CMT_Is_Full()
 //	int offset=0;
     // 若果满了,先选择关联度最大进行删除
     if(MAP_SECOND_MAX_ENTRIES-MAP_SECOND_NUM_ENTRIES==0){
+      //debug time
+      printf("start Cluster CMT is Full\n");
+      t1=(unsigned long) GetCycleCount();
+
         MC=0;
         find_MC_entries(second_arr,MAP_SECOND_MAX_ENTRIES);
         send_flash_request(maxentry*8,8,1,2,1);
@@ -2382,6 +2388,10 @@ void ADFTL_Cluster_CMT_Is_Full()
                 MAP_SECOND_NUM_ENTRIES--;
             }
         }
+
+
+      t2=(unsigned long) GetCycleCount();
+      printf("end Cluster CMT is Full -Use Time:%f\n",(t2 - t1)*1.0/FREQUENCY);
 
     }
 
@@ -2431,6 +2441,9 @@ int ADFTL_Find_Victim_In_RCMT_W()
 {
     int i,clean_flag=0,pos_index=-1,temp_time,Victim_index;
 
+    //debug time
+    unsigned long T1,T2;
+
     int *index_arr,*lpn_arr,*Time_arr;
     //32位最大的int值
     int Temp_MAXTIME=999999999;
@@ -2451,6 +2464,11 @@ int ADFTL_Find_Victim_In_RCMT_W()
         lpn_arr[i]=-1;
     }
 
+//    debug time
+    printf("start sort--(Find Victim_In_RCMT_W)\n");
+    T1=(unsigned long)GetCycleCount();
+
+
     //根据operatintime做升序排序（最前面就是越靠近LRU）
     for(i=0;i<MAP_REAL_MAX_ENTRIES;i++){
         temp_time=MLC_opagemap[real_arr[i]].map_age;
@@ -2463,6 +2481,11 @@ int ADFTL_Find_Victim_In_RCMT_W()
         }
 
     }
+
+//    debug time
+    T2=(unsigned long)GetCycleCount();
+    printf("end sort--(Find Victim_In_RCMT_W) -Use Time:%f\n",(T2 - T1)*1.0/FREQUENCY);
+
 
     for(i=0;i<ADFTL_WINDOW_SIZE;i++){
         if(MLC_opagemap[lpn_arr[i]].update==0){
@@ -2483,12 +2506,19 @@ int ADFTL_Find_Victim_In_RCMT_W()
 void ADFTL_R_CMT_Is_Full()
 {
     int Victim_pos=-1,free_pos=-1,curr_lpn;
+
+    //debug time
+    unsigned long T1,T2;
+
     if(MAP_REAL_MAX_ENTRIES-MAP_REAL_NUM_ENTRIES==0){
         //先确保Cluster_CMT有空闲的位置
         if(MAP_SECOND_MAX_ENTRIES-MAP_SECOND_NUM_ENTRIES==0){
             ADFTL_Cluster_CMT_Is_Full();
         }
         //优先选择置换区W内的干净映射项
+        printf("start Select Vicitim--(ADFTL_R_CMT_Is_Full)\n");
+        T1=(unsigned long)GetCycleCount();
+
         Victim_pos=ADFTL_Find_Victim_In_RCMT_W();
         curr_lpn=real_arr[Victim_pos];
         if(MLC_opagemap[curr_lpn].update!=0){
@@ -2511,6 +2541,9 @@ void ADFTL_R_CMT_Is_Full()
             MLC_opagemap[curr_lpn].update=0;
             MAP_REAL_NUM_ENTRIES--;
         }
+
+        T2=(unsigned)GetCycleCount();
+        printf("start Select Vicitim--(ADFTL_R_CMT_Is_Full) -Use Time:%f\n",(T2 - T1)*1.0/FREQUENCY);
     }
 
 }
