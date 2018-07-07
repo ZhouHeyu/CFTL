@@ -2232,11 +2232,10 @@ void ADFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
 //                printf("Hit R_CMT-Use Time:%f\n",(t2 - t1)*1.0/FREQUENCY);
 
             }else if(MLC_opagemap[blkno].map_status==MAP_SECOND || MLC_opagemap[blkno].map_status==MAP_SEQ){
-              //debug time
-              printf("start Move data to R_CMT\n");
-              t1=(unsigned long) GetCycleCount();
 
-
+//              //debug time
+//              printf("start Move data to R_CMT\n");
+//              t1=(unsigned long) GetCycleCount();
 
                 operation_time++;
                 //只有写请求才可以移动到R-CMT中
@@ -2256,9 +2255,9 @@ void ADFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
                 }
 
 
-              //debug time
-              t2=(unsigned long) GetCycleCount();
-              printf("move data to R-CMT -Use Time:%f\n",(t2 - t1)*1.0/FREQUENCY);
+//              //debug time
+//              t2=(unsigned long) GetCycleCount();
+//              printf("move data to R-CMT -Use Time:%f\n",(t2 - t1)*1.0/FREQUENCY);
 
             }else if((cnt+1)>=THRESHOLD){
 //              //debug time
@@ -2272,14 +2271,15 @@ void ADFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
 //              printf("end pre data into S_CMT -Use Time:%f\n",(t2 - t1)*1.0/FREQUENCY);
             }else{
               //debug time
-              printf("start first data into Cluster_CMT\n");
-              t1=(unsigned long) GetCycleCount();
+//              printf("start first data into Cluster_CMT\n");
+//              t1=(unsigned long) GetCycleCount();
 
                 //第一次加载的数据到R-CMT中
                 ADFTL_R_CMT_Is_Full();
                 load_entry_into_R_CMT(blkno,operation);
-              t2=(unsigned long) GetCycleCount();
-              printf("end first data into Cluster_CMT -Use Time:%f\n",(t2 - t1)*1.0/FREQUENCY);
+
+//              t2=(unsigned long) GetCycleCount();
+//              printf("end first data into Cluster_CMT -Use Time:%f\n",(t2 - t1)*1.0/FREQUENCY);
 
             }
 
@@ -2454,10 +2454,13 @@ int ADFTL_Find_Victim_In_RCMT_W()
         assert(0);
     }
 
+
+
     //存的是real_arr的下标索引
     index_arr=(int *)malloc(ADFTL_WINDOW_SIZE*sizeof(int));
     lpn_arr=(int *)malloc(ADFTL_WINDOW_SIZE*sizeof(int));
     Time_arr=(int *)malloc(ADFTL_WINDOW_SIZE*sizeof(int));
+
     //init
     for(i=0;i<ADFTL_WINDOW_SIZE;i++){
         index_arr[i]=-1;
@@ -2465,27 +2468,32 @@ int ADFTL_Find_Victim_In_RCMT_W()
         lpn_arr[i]=-1;
     }
 
-//    debug time
-    printf("start sort--(Find Victim_In_RCMT_W)\n");
+     //    debug time
     T1=(unsigned long)GetCycleCount();
-
 
     //根据operatintime做升序排序（最前面就是越靠近LRU）
     for(i=0;i<MAP_REAL_MAX_ENTRIES;i++){
         temp_time=MLC_opagemap[real_arr[i]].map_age;
         pos_index=Find_Min_Insert_pos(Time_arr,ADFTL_WINDOW_SIZE,temp_time);
+
+//        debug time
+        T2=(unsigned long)GetCycleCount();
+        printf("Find_Min_Insert_pos (Find Victim_In_RCMT_W) -Use Time:%f\n",(T2 - T1)*1.0/FREQUENCY);
+        T1=T2;
+
         //存在可插入的最小值位置
         if(pos_index!=-1){
             Insert_Value_In_Arr(Time_arr,ADFTL_WINDOW_SIZE,pos_index,temp_time);
             Insert_Value_In_Arr(index_arr,ADFTL_WINDOW_SIZE,pos_index,i);
             Insert_Value_In_Arr(lpn_arr,ADFTL_WINDOW_SIZE,pos_index,real_arr[i]);
         }
+//      debug time
+        T2=(unsigned long)GetCycleCount();
+        printf("Insert_Value_In_Arr (Find Victim_In_RCMT_W) -Use Time:%f\n",(T2 - T1)*1.0/FREQUENCY);
+        T1=T2;
 
     }
 
-//    debug time
-    T2=(unsigned long)GetCycleCount();
-    printf("end sort--(Find Victim_In_RCMT_W) -Use Time:%f\n",(T2 - T1)*1.0/FREQUENCY);
 
 
     for(i=0;i<ADFTL_WINDOW_SIZE;i++){
