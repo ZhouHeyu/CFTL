@@ -39,6 +39,9 @@ static __inline__ unsigned long long GetCycleCount(void)
 #endif
 
 
+#define FREQUENCY 1800
+
+
 
 extern int merge_switch_num;
 extern int merge_partial_num;
@@ -2164,6 +2167,9 @@ void ADFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
 {
     int blkno=(*pageno),cnt=(*req_size);
 
+    //运行测试时间的变量
+    unsigned long t1,t2;
+
     int pos=-1,free_pos=-1;
 
     if(flash_flag==0){
@@ -2216,9 +2222,22 @@ void ADFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
             rqst_cnt++;
             /*********AD-FTL 逻辑处理*****************/
             if(MLC_opagemap[blkno].map_status==MAP_REAL){
+                //debug time
+                printf("start Hit R_CMT\n");
+                t1=(unsigned long) GetCycleCount();
                 //命中R-CMT
                 ADFTL_Hit_R_CMT(blkno,operation);
+//                debug time
+                t2=(unsigned long) GetCycleCount();
+                printf("Hit R_CMT-Use Time:%f\n",(t2 - t1)*1.0/FREQUENCY);
+
             }else if(MLC_opagemap[blkno].map_status==MAP_SECOND || MLC_opagemap[blkno].map_status==MAP_SEQ){
+              //debug time
+              printf("start Move data to R_CMT\n");
+              t1=(unsigned long) GetCycleCount();
+
+
+
                 operation_time++;
                 //只有写请求才可以移动到R-CMT中
                 if(operation==0){
@@ -2235,14 +2254,34 @@ void ADFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
                     //读请求命中项不做转移操作，但需要做数据访问请求处理
                     ADFTL_Read_Hit_ClusterCMT_or_SCMT(blkno,operation);
                 }
+
+
+              //debug time
+              t2=(unsigned long) GetCycleCount();
+              printf("move data to R-CMT -Use Time:%f\n",(t2 - t1)*1.0/FREQUENCY);
+
             }else if((cnt+1)>=THRESHOLD){
-                // 预取策略
+              //debug time
+              printf("start pre data into S_CMT\n");
+              t1=(unsigned long) GetCycleCount();
+              // 预取策略
                 ADFTL_pre_load_entry_into_SCMT(&blkno,&cnt,operation);
+              //debug time
+              t2=(unsigned long) GetCycleCount();
+              printf("end pre data into S_CMT -Use Time:%f\n",(t2 - t1)*1.0/FREQUENCY);
             }else{
+              //debug time
+              printf("start first data into Cluster_CMT\n");
+              t1=(unsigned long) GetCycleCount();
+
                 //第一次加载的数据到R-CMT中
                 ADFTL_R_CMT_Is_Full();
                 load_entry_into_R_CMT(blkno,operation);
             }
+
+            t2=(unsigned long) GetCycleCount();
+            printf("end first data into Cluster_CMT -Use Time:%f\n",(t2 - t1)*1.0/FREQUENCY);
+
         }
 
     }
