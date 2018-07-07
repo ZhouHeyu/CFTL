@@ -2359,9 +2359,9 @@ int ADFTL_Find_Victim_In_RCMT_W()
 
     int *index_arr,*lpn_arr,*Time_arr;
     //32位最大的int值
-    long  MAXTIME=21474836473;
+    int Temp_MAXTIME=999999999;
     //debug
-    if(operation_time>=MAXTIME){
+    if(operation_time>=Temp_MAXTIME){
         printf("operation_time is %d,over MAXTIME\n",operation_time);
         assert(0);
     }
@@ -2369,11 +2369,11 @@ int ADFTL_Find_Victim_In_RCMT_W()
     //存的是real_arr的下标索引
     index_arr=(int *)malloc(ADFTL_WINDOW_SIZE*sizeof(int));
     lpn_arr=(int *)malloc(ADFTL_WINDOW_SIZE*sizeof(int));
-    Time_arr=(long *)malloc(ADFTL_WINDOW_SIZE*sizeof(long));
+    Time_arr=(int *)malloc(ADFTL_WINDOW_SIZE*sizeof(int));
     //init
     for(i=0;i<ADFTL_WINDOW_SIZE;i++){
         index_arr[i]=-1;
-        Time_arr[i]=MAXTIME;
+        Time_arr[i]=Temp_MAXTIME;
         lpn_arr[i]=-1;
     }
 
