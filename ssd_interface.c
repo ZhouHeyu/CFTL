@@ -38,8 +38,8 @@ static __inline__ unsigned long long GetCycleCount(void)
 }
 #endif
 
-
-#define FREQUENCY 1800
+//假设CPU为2GHz,换算时间为ms
+#define FREQUENCY 2000000
 
 //运行测试时间的变量
 unsigned long t1,t2;
@@ -2222,14 +2222,14 @@ void ADFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
             rqst_cnt++;
             /*********AD-FTL 逻辑处理*****************/
             if(MLC_opagemap[blkno].map_status==MAP_REAL){
-                //debug time
-                printf("start Hit R_CMT\n");
-                t1=(unsigned long) GetCycleCount();
+//                //debug time
+//                printf("start Hit R_CMT\n");
+//                t1=(unsigned long) GetCycleCount();
                 //命中R-CMT
                 ADFTL_Hit_R_CMT(blkno,operation);
-//                debug time
-                t2=(unsigned long) GetCycleCount();
-                printf("Hit R_CMT-Use Time:%f\n",(t2 - t1)*1.0/FREQUENCY);
+////                debug time
+//                t2=(unsigned long) GetCycleCount();
+//                printf("Hit R_CMT-Use Time:%f\n",(t2 - t1)*1.0/FREQUENCY);
 
             }else if(MLC_opagemap[blkno].map_status==MAP_SECOND || MLC_opagemap[blkno].map_status==MAP_SEQ){
               //debug time
@@ -2261,14 +2261,15 @@ void ADFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
               printf("move data to R-CMT -Use Time:%f\n",(t2 - t1)*1.0/FREQUENCY);
 
             }else if((cnt+1)>=THRESHOLD){
-              //debug time
-              printf("start pre data into S_CMT\n");
-              t1=(unsigned long) GetCycleCount();
+//              //debug time
+//              printf("start pre data into S_CMT\n");
+//              t1=(unsigned long) GetCycleCount();
               // 预取策略
                 ADFTL_pre_load_entry_into_SCMT(&blkno,&cnt,operation);
-              //debug time
-              t2=(unsigned long) GetCycleCount();
-              printf("end pre data into S_CMT -Use Time:%f\n",(t2 - t1)*1.0/FREQUENCY);
+
+//              //debug time
+//              t2=(unsigned long) GetCycleCount();
+//              printf("end pre data into S_CMT -Use Time:%f\n",(t2 - t1)*1.0/FREQUENCY);
             }else{
               //debug time
               printf("start first data into Cluster_CMT\n");
