@@ -2228,6 +2228,10 @@ void ADFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
             if(MLC_opagemap[blkno].map_status==MAP_REAL){
                 //命中R-CMT
                 ADFTL_Hit_R_CMT(blkno,operation);
+                if(ListLength(ADFTL_Head)!=MAP_REAL_NUM_ENTRIES){
+                  printf(" after ADFTL Hit R CMT error,ListLength is %d,real_arr size is %d\n",ListLength(ADFTL_Head),MAP_REAL_NUM_ENTRIES);
+                  assert(0);
+                }
 
             }else if(MLC_opagemap[blkno].map_status==MAP_SECOND || MLC_opagemap[blkno].map_status==MAP_SEQ){
 
@@ -2235,9 +2239,20 @@ void ADFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
                 //只有写请求才可以移动到R-CMT中
                 if(operation==0){
                     if(MLC_opagemap[blkno].map_status==MAP_SECOND){
-                        ADFTL_Move_Cluster_CMT_to_RCMT(blkno,operation);
+                      ADFTL_Move_Cluster_CMT_to_RCMT(blkno,operation);
+
+                      if(ListLength(ADFTL_Head)!=MAP_REAL_NUM_ENTRIES){
+                        printf(" after ADFTL_Move_Cluster_CMT_to_RCMT error,ListLength is %d,real_arr size is %d\n",ListLength(ADFTL_Head),MAP_REAL_NUM_ENTRIES);
+                        assert(0);
+                      }
                     }else if(MLC_opagemap[blkno].map_status==MAP_SEQ){
                         ADFTL_Move_SCMT_to_RCMT(blkno,operation);
+
+                      if(ListLength(ADFTL_Head)!=MAP_REAL_NUM_ENTRIES){
+                        printf(" after ADFTL_Move_SCMT_to_RCMT error,ListLength is %d,real_arr size is %d\n",ListLength(ADFTL_Head),MAP_REAL_NUM_ENTRIES);
+                        assert(0);
+                      }
+
                     }else{
                         //debug print
                         printf("can not exist this happend\n");
@@ -2252,11 +2267,24 @@ void ADFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
             }else if((cnt+1)>=THRESHOLD){
               // 预取策略
                 ADFTL_pre_load_entry_into_SCMT(&blkno,&cnt,operation);
+
+              if(ListLength(ADFTL_Head)!=MAP_REAL_NUM_ENTRIES){
+                printf(" after ADFTL_pre_load_entry_into_SCMT error,ListLength is %d,real_arr size is %d\n",ListLength(ADFTL_Head),MAP_REAL_NUM_ENTRIES);
+                assert(0);
+              }
+
+
             }else{
 
                 //第一次加载的数据到R-CMT中
                 ADFTL_R_CMT_Is_Full();
                 load_entry_into_R_CMT(blkno,operation);
+
+              if(ListLength(ADFTL_Head)!=MAP_REAL_NUM_ENTRIES){
+                printf(" after 第一次加载的数据到R-CMT中 error,ListLength is %d,real_arr size is %d\n",ListLength(ADFTL_Head),MAP_REAL_NUM_ENTRIES);
+                assert(0);
+              }
+
             }
 
 
@@ -2571,13 +2599,7 @@ void ADFTL_R_CMT_Is_Full()
         if(MAP_SECOND_MAX_ENTRIES-MAP_SECOND_NUM_ENTRIES==0){
             ADFTL_Cluster_CMT_Is_Full();
         }
-        //优先选择置换区W内的干净映射项
-/*
-        printf("start Select Vicitim--(ADFTL_R_CMT_Is_Full)\n");
-        T1=(unsigned long)GetCycleCount();
-*/
 
-//        Victim_pos=ADFTL_Find_Victim_In_RCMT_W();
         Victim_pos=Fast_Find_Victim_In_RCMT_W();
         curr_lpn=real_arr[Victim_pos];
         if(MLC_opagemap[curr_lpn].update!=0){
@@ -2611,10 +2633,6 @@ void ADFTL_R_CMT_Is_Full()
             MAP_REAL_NUM_ENTRIES--;
         }
 
-/*
-        T2=(unsigned)GetCycleCount();
-        printf("end Select Vicitim--(ADFTL_R_CMT_Is_Full) -Use Time:%f\n",(T2 - T1)*1.0/FREQUENCY);
-*/
     }
 
 }
