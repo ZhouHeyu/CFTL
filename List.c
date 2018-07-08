@@ -114,16 +114,19 @@ Node *DeleteLRUInList(Node *Head)
 Node *InsertNodeInListMRU(Node *Insert,Node *Head)
 {
     Node *temp;
-    temp=Insert;
 //    remove
-    temp->next->pre=temp->pre;
-    temp->pre->next=temp->next;
+    Insert->pre->next=Insert->next;
+    Insert->next->pre=Insert->pre;
+
+//    Insert->next=NULL;
+//    Insert->pre=NULL;
 //    Insert
-    temp->next=Head->next;
-    temp->pre=Head;
-    Head->next=temp;
-    Head->next->pre=temp;
-    
+    Insert->pre=Head;
+    Insert->next=Head->next;
+
+    Head->next->pre=Insert;
+    Head->next=Insert;
+
     return Head;
 }
 
