@@ -1456,7 +1456,7 @@ void pre_load_entry_into_SCMT(int *pageno,int *req_size,int operation)
 				if(MAP_SEQ_NUM_ENTRIES > MAP_SEQ_MAX_ENTRIES)
 				{
 					printf("The sequential cache is overflow!\n");
-					exit(0);
+					assert(0);
 				}
 				if(operation==0)
 				{
@@ -2199,15 +2199,15 @@ void ADFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
                 average_request_size = (total_request_size * 1.0) / itemcount;//请求平均大小
 
                 //H-CMT 28KB page(2kB 512entries) 7168
-                MAP_REAL_MAX_ENTRIES = 7168;
+                MAP_REAL_MAX_ENTRIES = 100;
                 // real_arr 当做R-CMT使用
                 real_arr = (int *) malloc(sizeof(int) * MAP_REAL_MAX_ENTRIES);
                 // S-CMT 16KB 4096
-                MAP_SEQ_MAX_ENTRIES = 4096;
+                MAP_SEQ_MAX_ENTRIES = 100;
                 // seq_arr当做S-CMT使用
                 seq_arr = (int *) malloc(sizeof(int) * MAP_SEQ_MAX_ENTRIES);
                 //Cluster-CMT 20kB  5120
-                MAP_SECOND_MAX_ENTRIES = 5120;
+                MAP_SECOND_MAX_ENTRIES = 100;
 
                 //RCMT的优先置换区的大小
                 ADFTL_WINDOW_SIZE=(int)MAP_REAL_MAX_ENTRIES*ADFTL_Tau;
@@ -2262,13 +2262,13 @@ void ADFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
             }else if((cnt+1)>=THRESHOLD){
 //              //debug time
 //              printf("start pre data into S_CMT\n");
-//              t1=(unsigned long) GetCycleCount();
+				//t1=(unsigned long) GetCycleCount();
               // 预取策略
                 ADFTL_pre_load_entry_into_SCMT(&blkno,&cnt,operation);
 
 //              //debug time
-//              t2=(unsigned long) GetCycleCount();
-//              printf("end pre data into S_CMT -Use Time:%f\n",(t2 - t1)*1.0/FREQUENCY);
+				//t2=(unsigned long) GetCycleCount();
+				//printf(" pre data into S_CMT -Use Time:%f\n",(t2 - t1)*1.0/FREQUENCY);
             }else{
               //debug time
 //              printf("start first data into Cluster_CMT\n");
@@ -2392,7 +2392,7 @@ void ADFTL_Cluster_CMT_Is_Full()
 
 
       t2=(unsigned long) GetCycleCount();
-      printf("end Cluster CMT is Full -Use Time:%f\n",(t2 - t1)*1.0/FREQUENCY);
+      printf("Cluster CMT is Full -Use Time:%f\n",(t2 - t1)*1.0/FREQUENCY);
 
     }
 
@@ -2441,13 +2441,18 @@ void Insert_Value_In_Arr(int *arr,int size,int pos,int value)
 int ADFTL_Find_Victim_In_RCMT_W()
 {
     int i,clean_flag=0,pos_index=-1,temp_time,Victim_index;
-
+    
+	unsigned long S1,S2;
     //debug time
     unsigned long T1,T2;
 
+	
     int *index_arr,*lpn_arr,*Time_arr;
     //32位最大的int值
     int Temp_MAXTIME=999999999;
+
+    
+	S1=(unsigned long)GetCycleCount();
     //debug
     if(operation_time>=Temp_MAXTIME){
         printf("operation_time is %d,over MAXTIME\n",operation_time);
@@ -2478,7 +2483,10 @@ int ADFTL_Find_Victim_In_RCMT_W()
 
 //        debug time
         T2=(unsigned long)GetCycleCount();
-        printf("Find_Min_Insert_pos (Find Victim_In_RCMT_W) -Use Time:%f\n",(T2 - T1)*1.0/FREQUENCY);
+        if(((T2 - T1)*1.0/FREQUENCY)>1){
+	        printf("Find_Min_Insert_pos (Find Victim_In_RCMT_W) -Use Time:%f\n",(T2 - T1)*1.0/FREQUENCY);
+		}
+
         T1=T2;
 
         //存在可插入的最小值位置
@@ -2489,7 +2497,9 @@ int ADFTL_Find_Victim_In_RCMT_W()
         }
 //      debug time
         T2=(unsigned long)GetCycleCount();
-        printf("Insert_Value_In_Arr (Find Victim_In_RCMT_W) -Use Time:%f\n",(T2 - T1)*1.0/FREQUENCY);
+        if(((T2 - T1)*1.0/FREQUENCY)>1){
+			printf("Insert_Value_In_Arr (Find Victim_In_RCMT_W) -Use Time:%f\n",(T2 - T1)*1.0/FREQUENCY);
+		}
         T1=T2;
 
     }
@@ -2508,6 +2518,11 @@ int ADFTL_Find_Victim_In_RCMT_W()
         Victim_index=index_arr[0];
     }
 
+    S2=(unsigned long)GetCycleCount();
+
+	printf("Find Victim_In_RCMT_W ALL -Use Time:%f\n",(S2 - S1)*1.0/FREQUENCY);
+
+
     return Victim_index;
 
 }
@@ -2525,8 +2540,10 @@ void ADFTL_R_CMT_Is_Full()
             ADFTL_Cluster_CMT_Is_Full();
         }
         //优先选择置换区W内的干净映射项
+/*
         printf("start Select Vicitim--(ADFTL_R_CMT_Is_Full)\n");
         T1=(unsigned long)GetCycleCount();
+*/
 
         Victim_pos=ADFTL_Find_Victim_In_RCMT_W();
         curr_lpn=real_arr[Victim_pos];
@@ -2551,8 +2568,10 @@ void ADFTL_R_CMT_Is_Full()
             MAP_REAL_NUM_ENTRIES--;
         }
 
+/*
         T2=(unsigned)GetCycleCount();
         printf("end Select Vicitim--(ADFTL_R_CMT_Is_Full) -Use Time:%f\n",(T2 - T1)*1.0/FREQUENCY);
+*/
     }
 
 }
@@ -2771,7 +2790,7 @@ void ADFTL_pre_load_entry_into_SCMT(int *pageno,int *req_size,int operation)
         if(MAP_SEQ_NUM_ENTRIES > MAP_SEQ_MAX_ENTRIES)
         {
             printf("The sequential cache is overflow!\n");
-            exit(0);
+            assert(0);
         }
         //~  对数据页读取写入操作更新
         if(operation==0)
