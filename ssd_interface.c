@@ -2269,8 +2269,7 @@ void ADFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
                 }
 
 
-            }
-            /*else if((cnt+1)>=THRESHOLD){
+            } else if((cnt+1)>=THRESHOLD){
               // 预取策略
                 ADFTL_pre_load_entry_into_SCMT(&blkno,&cnt,operation);
 
@@ -2280,9 +2279,7 @@ void ADFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
               }
 
 
-            }*/
-
-            else{
+            } else{
 
                 //第一次加载的数据到R-CMT中
                 ADFTL_R_CMT_Is_Full();
