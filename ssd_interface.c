@@ -2203,15 +2203,15 @@ void ADFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
                 average_request_size = (total_request_size * 1.0) / itemcount;//请求平均大小
 
                 //H-CMT 28KB page(2kB 512entries) 7168
-                MAP_REAL_MAX_ENTRIES = 7168;
+                MAP_REAL_MAX_ENTRIES = 50;
                 // real_arr 当做R-CMT使用
                 real_arr = (int *) malloc(sizeof(int) * MAP_REAL_MAX_ENTRIES);
                 // S-CMT 16KB 4096 预取的8个,所以是8的倍数
-                MAP_SEQ_MAX_ENTRIES = 4096;
+                MAP_SEQ_MAX_ENTRIES = 48;
                 // seq_arr当做S-CMT使用
                 seq_arr = (int *) malloc(sizeof(int) * MAP_SEQ_MAX_ENTRIES);
                 //Cluster-CMT 20kB  5120
-                MAP_SECOND_MAX_ENTRIES = 5120;
+                MAP_SECOND_MAX_ENTRIES = 50;
 
                 //RCMT的优先置换区的大小
                 ADFTL_WINDOW_SIZE=(int)MAP_REAL_MAX_ENTRIES*ADFTL_Tau;
