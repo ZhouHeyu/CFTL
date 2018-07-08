@@ -2206,8 +2206,8 @@ void ADFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
                 MAP_REAL_MAX_ENTRIES = 100;
                 // real_arr 当做R-CMT使用
                 real_arr = (int *) malloc(sizeof(int) * MAP_REAL_MAX_ENTRIES);
-                // S-CMT 16KB 4096
-                MAP_SEQ_MAX_ENTRIES = 100;
+                // S-CMT 16KB 4096 预取的8个,所以是8的倍数
+                MAP_SEQ_MAX_ENTRIES = 104;
                 // seq_arr当做S-CMT使用
                 seq_arr = (int *) malloc(sizeof(int) * MAP_SEQ_MAX_ENTRIES);
                 //Cluster-CMT 20kB  5120
