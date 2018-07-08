@@ -168,14 +168,15 @@ void warmFlash(char *tname){
     SLC_blkno=blkno;
     MLC_blkno=blkno;
   
-   if(flags==1){
+//   无论读写都作为写请求写入，同时写放大系数放大到4倍
     mbcount = ((blkno + bcount -1) / 8 - (blkno)/8 + 1) * 8;
     MLC_blkno /= 8;
     MLC_blkno *= 8;
 
 //   预热的时候增大请求的大小
     delay = callFsim(MLC_blkno, mbcount*4, 0,1);
-    }  
+
+
     for(i = blkno; i<(blkno+bcount); i++){ dm_table[i] = DEV_FLASH; }
   }
   nand_stat_reset();
@@ -262,8 +263,8 @@ int main (int argc, char **argv)
   }
 
  // warmFlashsynth();
-//  warmFlash(argv[4]);
-    MywarmFlash();
+  warmFlash(argv[4]);
+//    MywarmFlash();
   disksim_run_simulation ();
 
   disksim_cleanup_and_printstats ();
