@@ -28,7 +28,6 @@ else
     elif [ $flag == "1" ];then
         git pull origin master
     fi
-    git pull origin master
     #切换目录到上级目录make
     cd ../ ; make
     read -p "if make is successed yes?no" flag
