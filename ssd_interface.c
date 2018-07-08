@@ -2819,6 +2819,11 @@ void load_entry_into_R_CMT(int blkno,int operation)
       assert(0);
     }
 
+    if(ListLength(ADFTL_Head)!=MAP_REAL_NUM_ENTRIES){
+      printf("List Length is %d and real_arr num is %d\n",ListLength(ADFTL_Head),MAP_REAL_NUM_ENTRIES);
+      assert(0);
+    }
+
 }
 
 /*****************ADFTL数据预取策略***********************/
