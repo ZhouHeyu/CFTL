@@ -226,6 +226,7 @@ void Insert_Value_In_Arr(int *arr,int size,int pos,int value);
 int ADFTL_Find_Victim_In_RCMT_W();
 //根据双链表操作快速找到RCMT W窗口内的置换项剔除
 int  Fast_Find_Victim_In_RCMT_W();
+Node *ADFTL_Head=NULL;
 
 /***********************************************************************
  *                    debug function
@@ -2216,7 +2217,7 @@ void ADFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
                 ADFTL_WINDOW_SIZE=(int)MAP_REAL_MAX_ENTRIES*ADFTL_Tau;
                 // second_arr当做Cluster-CMT使用
                 second_arr = (int *) malloc(sizeof(int) * MAP_SECOND_MAX_ENTRIES);
-
+                ADFTL_Head=CreateList();
                 ADFTL_init_arr();
 
 
@@ -2229,10 +2230,6 @@ void ADFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
                 ADFTL_Hit_R_CMT(blkno,operation);
 
             }else if(MLC_opagemap[blkno].map_status==MAP_SECOND || MLC_opagemap[blkno].map_status==MAP_SEQ){
-
-//              //debug time
-//              printf("start Move data to R_CMT\n");
-//              t1=(unsigned long) GetCycleCount();
 
                 operation_time++;
                 //只有写请求才可以移动到R-CMT中
@@ -2252,32 +2249,14 @@ void ADFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
                 }
 
 
-//              //debug time
-//              t2=(unsigned long) GetCycleCount();
-//              printf("move data to R-CMT -Use Time:%f\n",(t2 - t1)*1.0/FREQUENCY);
-
             }else if((cnt+1)>=THRESHOLD){
-//              //debug time
-//              printf("start pre data into S_CMT\n");
-				//t1=(unsigned long) GetCycleCount();
               // 预取策略
                 ADFTL_pre_load_entry_into_SCMT(&blkno,&cnt,operation);
-
-//              //debug time
-				//t2=(unsigned long) GetCycleCount();
-				//printf(" pre data into S_CMT -Use Time:%f\n",(t2 - t1)*1.0/FREQUENCY);
             }else{
-              //debug time
-//              printf("start first data into Cluster_CMT\n");
-//              t1=(unsigned long) GetCycleCount();
 
                 //第一次加载的数据到R-CMT中
                 ADFTL_R_CMT_Is_Full();
                 load_entry_into_R_CMT(blkno,operation);
-
-//              t2=(unsigned long) GetCycleCount();
-//              printf("end first data into Cluster_CMT -Use Time:%f\n",(t2 - t1)*1.0/FREQUENCY);
-
             }
 
 
