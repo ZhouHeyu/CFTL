@@ -2171,6 +2171,7 @@ void ADFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
     int blkno=(*pageno),cnt=(*req_size);
 
     unsigned long t1,t2;
+    Node *Temp;
 
     int pos=-1,free_pos=-1;
 
@@ -2224,14 +2225,8 @@ void ADFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
             rqst_cnt++;
             /*********AD-FTL 逻辑处理*****************/
             if(MLC_opagemap[blkno].map_status==MAP_REAL){
-//                //debug time
-//                printf("start Hit R_CMT\n");
-//                t1=(unsigned long) GetCycleCount();
                 //命中R-CMT
                 ADFTL_Hit_R_CMT(blkno,operation);
-////                debug time
-//                t2=(unsigned long) GetCycleCount();
-//                printf("Hit R_CMT-Use Time:%f\n",(t2 - t1)*1.0/FREQUENCY);
 
             }else if(MLC_opagemap[blkno].map_status==MAP_SECOND || MLC_opagemap[blkno].map_status==MAP_SEQ){
 
@@ -2818,6 +2813,12 @@ void load_entry_into_R_CMT(int blkno,int operation)
         printf("not play lpn-entry:%d into CMT\n",blkno);
         assert(0);
     }
+
+    if(SearchLPNInList(blkno,ADFTL_Head)==NULL){
+      printf("not Add blkno %d into List\n",blkno);
+      assert(0);
+    }
+
 }
 
 /*****************ADFTL数据预取策略***********************/
