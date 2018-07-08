@@ -2227,6 +2227,11 @@ void ADFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
             /*********AD-FTL 逻辑处理*****************/
             if(MLC_opagemap[blkno].map_status==MAP_REAL){
                 //命中R-CMT
+              if(ListLength(ADFTL_Head)!=MAP_REAL_NUM_ENTRIES){
+                printf(" before ADFTL Hit R CMT error,ListLength is %d,real_arr size is %d\n",ListLength(ADFTL_Head),MAP_REAL_NUM_ENTRIES);
+                assert(0);
+              }
+
                 ADFTL_Hit_R_CMT(blkno,operation);
                 if(ListLength(ADFTL_Head)!=MAP_REAL_NUM_ENTRIES){
                   printf(" after ADFTL Hit R CMT error,ListLength is %d,real_arr size is %d\n",ListLength(ADFTL_Head),MAP_REAL_NUM_ENTRIES);
