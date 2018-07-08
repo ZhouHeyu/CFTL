@@ -91,7 +91,7 @@ double average_request_size=0;
 #define CACHE_MAX_ENTRIES 300
 
 #define THRESHOLD 2
-#define NUM_ENTRIES_PER_TIME 4
+#define NUM_ENTRIES_PER_TIME 8
 //duchenjie:判断MC
 #define Threshold 100
 //翻译页的初始化
