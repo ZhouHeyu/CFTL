@@ -2269,7 +2269,7 @@ void ADFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
                 }
 
 
-            }else if((cnt+1)>=4){
+            }else if((cnt+1)>=THRESHOLD){
               // 预取策略
                 ADFTL_pre_load_entry_into_SCMT(&blkno,&cnt,operation);
 

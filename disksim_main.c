@@ -98,8 +98,9 @@ void warmFlash(char *tname){
     mbcount = ((blkno + bcount -1) / 8 - (blkno)/8 + 1) * 8;
     MLC_blkno /= 8;
     MLC_blkno *= 8;
-   
-    delay = callFsim(MLC_blkno, mbcount, 0,1);  
+
+//   预热的时候增大请求的大小
+    delay = callFsim(MLC_blkno, mbcount*4, 0,1);
     }  
     for(i = blkno; i<(blkno+bcount); i++){ dm_table[i] = DEV_FLASH; }
   }
