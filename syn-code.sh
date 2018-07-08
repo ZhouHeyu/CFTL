@@ -6,6 +6,14 @@ make clean
 echo "从github 上同步代码,lab206的git密码为:123456"
 echo "从github 上同步代码 ，zhouheyu的git密码为L：zhou1993"
 whoami
+echo "this git dir has remote :"
+git remote -v
+read -p "choose remote (gitee :0 origin:1)" flag
+if [ $flag == "0" ];then
+	git pull gitee  master
+elif [ $flag == "1" ];then
+	git pull origin master
+fi
 git pull origin master
 #切换目录到上级目录make
 cd ../ ; make
