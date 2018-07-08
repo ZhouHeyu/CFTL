@@ -16,6 +16,9 @@
 #include "flash.h"
 #include "type.h"
 
+//添加双链表的操作函数库
+#include "List.h"
+
 #define READ_DELAY        (0.1309/4)
 #define WRITE_DELAY       (0.4059/4)
 #define ERASE_DELAY       1.5 
@@ -182,7 +185,11 @@ int *ghost_arr;
 int *seq_arr;
 int *second_arr;
 
+//该头结点的初始化和释放在对应的dftl.h文件中进行
+Node *ADFTL_Head;
+
 int big_request_entry;
 int big_request_count;
 
 extern int in_cache_count;
+

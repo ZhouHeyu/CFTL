@@ -209,6 +209,7 @@ void CPFTL_pre_load_entry_into_SCMT(int *pageno,int *req_size,int operation);
 int ADFTL_WINDOW_SIZE=0;
 double ADFTL_Tau=0.3;
 
+
 void ADFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag);
 void ADFTL_init_arr();
 void ADFTL_Hit_R_CMT(int blkno,int operation);
@@ -223,7 +224,8 @@ void ADFTL_Read_Hit_ClusterCMT_or_SCMT(int blkno,int operation);
 int Find_Min_Insert_pos(int * arr,int size,int value);
 void Insert_Value_In_Arr(int *arr,int size,int pos,int value);
 int ADFTL_Find_Victim_In_RCMT_W();
-
+//根据双链表操作快速找到RCMT W窗口内的置换项剔除
+int  Fast_Find_Victim_In_RCMT_W();
 
 /***********************************************************************
  *                    debug function
@@ -1279,7 +1281,7 @@ void Hit_CMT_Entry(int blkno,int operation)
 
 		  if(MLC_opagemap[real_max].map_age <= MLC_opagemap[blkno].map_age){
 				real_max = blkno;
-		  }  
+		  }
 		
 		  if(operation==0){
 				write_count++;
@@ -2325,9 +2327,21 @@ void ADFTL_init_arr()
 
 void ADFTL_Hit_R_CMT(int blkno,int operation)
 {
+    Node *temp;
     MLC_opagemap[blkno].map_status=MAP_REAL;
     MLC_opagemap[blkno].map_age=operation_time;
     operation_time++;
+
+//    操作链表的LRU
+    temp=SearchLPNInList(blkno,ADFTL_Head);
+    if(temp==NULL){
+      printf("error in ADFTL_Hit_R_CMT,can not find blkno %d in List\n",blkno);
+      assert(0);
+    } else{
+//      move node
+      InsertNodeInListMRU(temp,ADFTL_Head);
+    }
+
     // write or read data page
     if(operation==0){
         write_count++;
@@ -2368,8 +2382,8 @@ void ADFTL_Cluster_CMT_Is_Full()
     // 若果满了,先选择关联度最大进行删除
     if(MAP_SECOND_MAX_ENTRIES-MAP_SECOND_NUM_ENTRIES==0){
       //debug time
-      printf("start Cluster CMT is Full\n");
-      t1=(unsigned long) GetCycleCount();
+//      printf("start Cluster CMT is Full\n");
+//      t1=(unsigned long) GetCycleCount();
 
         MC=0;
         find_MC_entries(second_arr,MAP_SECOND_MAX_ENTRIES);
@@ -2391,8 +2405,8 @@ void ADFTL_Cluster_CMT_Is_Full()
         }
 
 
-      t2=(unsigned long) GetCycleCount();
-      printf("Cluster CMT is Full -Use Time:%f\n",(t2 - t1)*1.0/FREQUENCY);
+//      t2=(unsigned long) GetCycleCount();
+//      printf("Cluster CMT is Full -Use Time:%f\n",(t2 - t1)*1.0/FREQUENCY);
 
     }
 
@@ -2433,6 +2447,50 @@ void Insert_Value_In_Arr(int *arr,int size,int pos,int value)
         }
         arr[pos]=value;
     }
+
+}
+
+
+//根据双链表操作快速找到RCMT W窗口内的置换项剔除
+int  Fast_Find_Victim_In_RCMT_W()
+{
+  Node *Temp;
+  int i,pos_index,Victim_index,curr_lpn,clean_flag=0;
+//  从尾部进行扫描,优先找到干净项进行删除
+  Temp=ADFTL_Head->pre;
+  for(i=0;i<ADFTL_WINDOW_SIZE;i++){
+    Temp=Temp->pre;
+    curr_lpn=Temp->lpn_num;
+    if(MLC_opagemap[curr_lpn].update==0 && MLC_opagemap[curr_lpn].map_status==MAP_REAL){
+      clean_flag=1;
+      break;
+    }
+  }
+
+  if(clean_flag==0){
+//      选择LRU位置的脏映射项
+    curr_lpn=ADFTL_Head->pre->lpn_num;
+    Victim_index=search_table(real_arr,MAP_REAL_MAX_ENTRIES,curr_lpn);
+    if(Victim_index==-1){
+      printf("can not find LRU pos lpn %d in real_arr\n",curr_lpn);
+      assert(0);
+    }
+
+  }else{
+//    选择窗口内的干净页映射项
+    if(MLC_opagemap[curr_lpn].update!=0){
+      printf("error MLC_opagemap[%d]->update can not be update\n",curr_lpn);
+      assert(0);
+    }
+    Victim_index=search_table(real_arr,MAP_REAL_MAX_ENTRIES,curr_lpn);
+    if(Victim_index==-1){
+      printf("can not find LRU pos lpn %d in real_arr\n",curr_lpn);
+      assert(0);
+    }
+  }
+
+  return Victim_index;
+
 
 }
 
@@ -2530,7 +2588,7 @@ int ADFTL_Find_Victim_In_RCMT_W()
 void ADFTL_R_CMT_Is_Full()
 {
     int Victim_pos=-1,free_pos=-1,curr_lpn;
-
+    Node *Temp;
     //debug time
     unsigned long T1,T2;
 
@@ -2545,7 +2603,8 @@ void ADFTL_R_CMT_Is_Full()
         T1=(unsigned long)GetCycleCount();
 */
 
-        Victim_pos=ADFTL_Find_Victim_In_RCMT_W();
+//        Victim_pos=ADFTL_Find_Victim_In_RCMT_W();
+        Victim_pos=Fast_Find_Victim_In_RCMT_W();
         curr_lpn=real_arr[Victim_pos];
         if(MLC_opagemap[curr_lpn].update!=0){
             //表明当前的优先置换区没有干净映射项，则选择LRU尾部脏页到Cluster-CMT中
@@ -2557,6 +2616,13 @@ void ADFTL_R_CMT_Is_Full()
             }
             second_arr[free_pos]=curr_lpn;
             real_arr[Victim_pos]=0;
+//          脏映射项直接是直接删除LRU位置的
+            Temp=DeleteLRUInList(ADFTL_Head);
+            if(Temp->lpn_num!=curr_lpn){
+              printf("delete lru arr Temp->lpn %d not equal curr-lpn %d\n",Temp->lpn_num,curr_lpn);
+              assert(0);
+            }
+
             MAP_REAL_NUM_ENTRIES--;
             MAP_SECOND_NUM_ENTRIES++;
         }else{
@@ -2565,6 +2631,9 @@ void ADFTL_R_CMT_Is_Full()
             real_arr[Victim_pos]=0;
             MLC_opagemap[curr_lpn].map_age=0;
             MLC_opagemap[curr_lpn].update=0;
+//           操作链表,删除被置换掉的节点
+            Temp=SearchLPNInList(curr_lpn,ADFTL_Head);
+            DeleteNodeInList(Temp,ADFTL_Head);
             MAP_REAL_NUM_ENTRIES--;
         }
 
@@ -2584,7 +2653,7 @@ void ADFTL_Move_Cluster_CMT_to_RCMT(int req_lpn,int operation)
     int Victim_pos;
 //    int temp;
     int limit_start=-1,limit_end=-1;
-
+    Node *Temp;
     //debug-value
     int last_second;
     int last_real;
@@ -2605,7 +2674,8 @@ void ADFTL_Move_Cluster_CMT_to_RCMT(int req_lpn,int operation)
         //printf("real is full and CCMT hit need to load entry to  HCMT\n");
         //确定R-CMT中的置换对象
         //优先选择置换区W内的干净映射项
-        Victim_pos=ADFTL_Find_Victim_In_RCMT_W();
+//        Victim_pos=ADFTL_Find_Victim_In_RCMT_W();
+        Victim_pos=Fast_Find_Victim_In_RCMT_W();
         real_min=real_arr[Victim_pos];
         pos = Victim_pos;
         if(MLC_opagemap[real_min].update==1){
@@ -2616,6 +2686,10 @@ void ADFTL_Move_Cluster_CMT_to_RCMT(int req_lpn,int operation)
             MLC_opagemap[req_lpn].map_status=MAP_REAL;
             MLC_opagemap[req_lpn].map_age=operation_time;
             operation_time++;
+//            删除链表中原来的节点,并将新的节点导入到MRU
+            Temp=SearchLPNInList(real_min,ADFTL_Head);
+            DeleteNodeInList(Temp,ADFTL_Head);
+            AddNewLPNInMRU(req_lpn,ADFTL_Head);
         }else{
             // 没有更新直接剔除到flash
             real_arr[pos]=0;
@@ -2629,6 +2703,10 @@ void ADFTL_Move_Cluster_CMT_to_RCMT(int req_lpn,int operation)
             MLC_opagemap[req_lpn].map_age=operation_time;
             operation_time++;
             second_arr[pos_2nd]=0;
+//            删除链表中原来的节点,并将新的节点导入到MRU
+            Temp=SearchLPNInList(real_min,ADFTL_Head);
+            DeleteNodeInList(Temp,ADFTL_Head);
+            AddNewLPNInMRU(req_lpn,ADFTL_Head);
             MAP_SECOND_NUM_ENTRIES--;
 
         }
@@ -2656,8 +2734,10 @@ void ADFTL_Move_Cluster_CMT_to_RCMT(int req_lpn,int operation)
         MLC_opagemap[req_lpn].map_status=MAP_REAL;
         MLC_opagemap[req_lpn].map_age=operation_time;
         operation_time++;
-
+//        插入新的节点进入
+        AddNewLPNInMRU(req_lpn,ADFTL_Head);
     }
+
     //data page operation
     if(operation==0){
         write_count++;
@@ -2682,6 +2762,9 @@ void ADFTL_Move_SCMT_to_RCMT(int blkno,int operation)
     MLC_opagemap[blkno].map_status=MAP_REAL;
     MLC_opagemap[blkno].map_age=operation_time;
     operation_time++;
+
+//    链表操作
+    AddNewLPNInMRU(blkno,ADFTL_Head);
     MAP_REAL_NUM_ENTRIES++;
     //operation data pages
     if(operation==0){
@@ -2711,6 +2794,9 @@ void load_entry_into_R_CMT(int blkno,int operation)
         assert(0);
     }
     real_arr[free_pos]=blkno;
+//    链表操作
+    AddNewLPNInMRU(blkno,ADFTL_Head);
+
     MAP_REAL_NUM_ENTRIES++;
 
     // write or read data page

@@ -829,6 +829,9 @@ void opm_end()
   }
   
   SLC_opagemap_num = 0;
+
+//  ADFTL释放对应的节点内存
+    FreeList(ADFTL_Head);
 }
 
 void opagemap_reset()
@@ -854,6 +857,10 @@ int opm_init(blk_t SLC_blk_num,blk_t MLC_blk_num, blk_t extra_num )
   SLC_opagemap_num = SLC_blk_num * S_PAGE_NUM_PER_BLK;
   MLC_opagemap_num = MLC_blk_num * M_PAGE_NUM_PER_BLK;
   opagemap_num = SLC_opagemap_num + MLC_opagemap_num;
+
+//  嵌入ADFTL可能需要的用到的头结点
+    ADFTL_Head=CreateList();
+
 
   //create primary mapping table
   SLC_opagemap = (struct opm_entry *) malloc(sizeof (struct opm_entry) * SLC_opagemap_num);
