@@ -208,7 +208,6 @@ void CPFTL_pre_load_entry_into_SCMT(int *pageno,int *req_size,int operation);
  * *******************************************************/
 int ADFTL_WINDOW_SIZE=0;
 double ADFTL_Tau=0.3;
-extern int warm_flag;
 
 void ADFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag);
 void ADFTL_init_arr();
