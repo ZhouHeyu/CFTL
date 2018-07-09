@@ -109,6 +109,9 @@
  int sum=0;
  int w_count=0;
  int th=5;
+ int max_th=16;
+ int min_th=0;
+
  int w_size[1000];
 extern int IO_trace;
 static void iotrace_initialize_iotrace_info ()
@@ -772,6 +775,155 @@ static ioreq_event * iotrace_ascii_get_ioreq_event_2 (FILE *tracefile, ioreq_eve
    new->busno = 0;
    new->cause = 0;
    return(new);
+
+}
+
+
+/******************************自适应阈值调整机制*******************************************
+ *  author:zhoujie
+ * @param tracefile
+ * @param new
+ * @return
+ */
+static ioreq_event * iotrace_ascii_get_ioreq_event_4(FILE *tracefile,ioreq_event *new)
+{
+    char line[201];
+    int sbcount,mbcount,threhold,diff,Es,Em,sblkno,ssblkno;
+    _u32 RWs,RWm;
+    int cnt,i,j,ppn,th_add;
+    double Tau,Temp;
+//    公式计算的参数
+    double Amplitude=4.0;
+//    指数系数
+    double index_mark=3.0;
+
+    sect_t s_psn,s_psn1,s_lsn;
+    blk_t pbn,pin;
+    if (fgets(line, 200, tracefile) == NULL) {
+        addtoextraq((event *) new);
+        return(NULL);
+    }
+    if (sscanf(line, "%lf %d %d %d %x\n", &new->time, &new->devno, &new->blkno, &new->bcount, &new->flags) != 5) {
+        fprintf(stderr, "Wrong number of arguments for I/O trace event type\n");
+        fprintf(stderr, "line: %s", line);
+        ddbg_assert(0);
+    }
+
+    //flashsim
+    RWs=SLC_stat_erase_num/40960;
+    //MLC value is 2GB so blk num is 8192
+    RWm=MLC_stat_erase_num/8192;
+    // RWs=SLC_stat_erase_num/1000;
+    // RWm=MLC_stat_erase_num/100;
+    diff=abs(RWs-RWm);
+    Es=SLC_stat_erase_num%40960;
+    Em=MLC_stat_erase_num%8192;
+    threhold=abs(Es-Em);
+
+
+    /**********自适应阈值调整机制***********************/
+    if(new->flags==0){
+        printf("SLC磨损速度：%d\n",SLC_stat_erase_num);
+        printf("MLC磨损速度：%d\n",MLC_stat_erase_num);
+
+        if(RWm==0){
+            Tau=2.5;
+        }else{
+            Tau=(double)RWs*1.0/RWm;
+        }
+
+        if(Tau>2.6){
+            Tau=2.6;
+        }else if(Tau<0.4){
+            Tau=0.4;
+        }
+
+//      计算确定增量
+        Temp=pow((log(Tau)/log(2))*Amplitude,index_mark);
+        printf("the Temp is %f\n",Temp);
+        if(Tau>1.0){
+            if(Temp>0){
+                th_add=-(int)(Temp+0.5);
+            }else{
+                th_add=(int)(Temp-0.5);
+            }
+        }else{
+            if(Temp>0){
+                th_add=(int)(Temp+0.5);
+            }else{
+                th_add=-(int)(Temp-0.5);
+            }
+        }
+
+//        自适应调整阈值
+        printf("th_add is %d",th_add);
+        th=th+th_add;
+        if(th<min_th){
+            th=min_th;
+        } else if(th>max_th){
+            th=max_th;
+        }
+        printf("th的值：%d\n ",th);
+
+        sblkno=new->blkno;
+        sbcount=((new->blkno+ new->bcount-1)/4 - (new->blkno)/4 + 1) * 4;
+        sblkno /= 4;
+        sblkno *= 4;
+        cnt= (sblkno+ sbcount-1)/4 - (sblkno)/4 + 1;
+//        根据阈值决定写入SLC还是MLC
+        if(new->bcount<=th){
+            if(RWs<=RWm){
+                if(new->blkno>=1048544){
+                    new->blkno=new->blkno-1048544;
+                }
+                new->flash_op_flag=0;
+                new->bcount=((new->blkno+ new->bcount-1)/4 - (new->blkno)/4 + 1) * 4;
+                new->blkno /= 4;
+                new->blkno *= 4;
+            }else{
+                ssblkno=new->blkno;
+                if(ssblkno>=1048544){
+                    ssblkno=ssblkno-1048544;
+                }
+                if(SLC_opagemap[ssblkno/4].free==0) {
+                    if(new->blkno>=1048544){
+                        new->blkno=new->blkno-1048544;
+                    }
+                    new->flash_op_flag=0;
+                    new->bcount=((new->blkno+ new->bcount-1)/4 - (new->blkno)/4 + 1) * 4;
+                    new->blkno /= 4;
+                    new->blkno *= 4;
+                }else{
+                    new->flash_op_flag=1;
+                    new->bcount = ((new->blkno+ new->bcount-1)/8 - (new->blkno)/8 + 1) * 8;
+                    new->blkno /= 8;
+                    new->blkno *= 8;
+                }
+            }
+        }else{
+            new->flash_op_flag=1;
+            new->bcount = ((new->blkno+ new->bcount-1)/8 - (new->blkno)/8 + 1) * 8;
+            new->blkno /= 8;
+            new->blkno *= 8;
+        }
+    }else{
+        new->flash_op_flag=1;
+        new->bcount = ((new->blkno+ new->bcount-1)/8 - (new->blkno)/8 + 1) * 8;
+        new->blkno /= 8;
+        new->blkno *= 8;
+    }
+
+    if (new->flags & ASYNCHRONOUS) {
+        new->flags |= (new->flags & READ) ? TIME_LIMITED : 0;
+    } else if (new->flags & SYNCHRONOUS) {
+        new->flags |= TIME_CRITICAL;
+    }
+
+    new->buf = 0;
+    new->opid = 0;
+    new->busno = 0;
+    new->cause = 0;
+    return(new);
 
 }
 
