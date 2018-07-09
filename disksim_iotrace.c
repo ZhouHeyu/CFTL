@@ -789,7 +789,7 @@ static ioreq_event * iotrace_ascii_get_ioreq_event_3(FILE *tracefile,ioreq_event
 {
     char line[201];
     int sbcount,mbcount,threhold,diff,Es,Em,sblkno,ssblkno;
-    _u32 RWs,RWm;
+    double RWs,RWm;
     int cnt,i,j,ppn,th_add;
     double Tau,Temp;
 //    公式计算的参数
@@ -810,12 +810,12 @@ static ioreq_event * iotrace_ascii_get_ioreq_event_3(FILE *tracefile,ioreq_event
     }
 
     //flashsim
-    RWs=SLC_stat_erase_num/40960;
+    RWs=SLC_stat_erase_num*1.0/40960;
     //MLC value is 2GB so blk num is 8192
-    RWm=MLC_stat_erase_num/8192;
+    RWm=MLC_stat_erase_num*1.0/8192;
     // RWs=SLC_stat_erase_num/1000;
     // RWm=MLC_stat_erase_num/100;
-    diff=abs(RWs-RWm);
+//    diff=abs(RWs-RWm);
     Es=SLC_stat_erase_num%40960;
     Em=MLC_stat_erase_num%8192;
     threhold=abs(Es-Em);
