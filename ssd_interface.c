@@ -208,7 +208,7 @@ void CPFTL_pre_load_entry_into_SCMT(int *pageno,int *req_size,int operation);
  * *******************************************************/
 int ADFTL_WINDOW_SIZE=0;
 double ADFTL_Tau=0.3;
-
+extern int warm_flag;
 
 void ADFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag);
 void ADFTL_init_arr();
@@ -227,6 +227,9 @@ int ADFTL_Find_Victim_In_RCMT_W();
 //根据双链表操作快速找到RCMT W窗口内的置换项剔除
 int  Fast_Find_Victim_In_RCMT_W();
 Node *ADFTL_Head=NULL;
+
+/***************新的预热函数*************************/
+void ADFTL_Warm(int *pageno,int *req_size,int operation);
 
 /***********************************************************************
  *                    debug function
@@ -2225,72 +2228,80 @@ void ADFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
             }
             rqst_cnt++;
             /*********AD-FTL 逻辑处理*****************/
-            if(MLC_opagemap[blkno].map_status==MAP_REAL){
-                //命中R-CMT
-              if(ListLength(ADFTL_Head)!=MAP_REAL_NUM_ENTRIES){
-                printf(" before ADFTL Hit R CMT error,ListLength is %d,real_arr size is %d\n",ListLength(ADFTL_Head),MAP_REAL_NUM_ENTRIES);
-                assert(0);
-              }
 
-                ADFTL_Hit_R_CMT(blkno,operation);
-                if(ListLength(ADFTL_Head)!=MAP_REAL_NUM_ENTRIES){
-                  printf(" after ADFTL Hit R CMT error,ListLength is %d,real_arr size is %d\n",ListLength(ADFTL_Head),MAP_REAL_NUM_ENTRIES);
-                  assert(0);
-                }
+            if(warm_flag==1){
+//                预热阶段，全部采用预取方式：
+                ADFTL_Warm(&blkno,&cnt,operation);
 
-            }else if(MLC_opagemap[blkno].map_status==MAP_SECOND || MLC_opagemap[blkno].map_status==MAP_SEQ){
-
-                operation_time++;
-                //只有写请求才可以移动到R-CMT中
-                if(operation==0){
-                    if(MLC_opagemap[blkno].map_status==MAP_SECOND){
-                      ADFTL_Move_Cluster_CMT_to_RCMT(blkno,operation);
-
-                      if(ListLength(ADFTL_Head)!=MAP_REAL_NUM_ENTRIES){
-                        printf(" after ADFTL_Move_Cluster_CMT_to_RCMT error,ListLength is %d,real_arr size is %d\n",ListLength(ADFTL_Head),MAP_REAL_NUM_ENTRIES);
-                        assert(0);
-                      }
-                    }else if(MLC_opagemap[blkno].map_status==MAP_SEQ){
-                        ADFTL_Move_SCMT_to_RCMT(blkno,operation);
-
-                      if(ListLength(ADFTL_Head)!=MAP_REAL_NUM_ENTRIES){
-                        printf(" after ADFTL_Move_SCMT_to_RCMT error,ListLength is %d,real_arr size is %d\n",ListLength(ADFTL_Head),MAP_REAL_NUM_ENTRIES);
-                        assert(0);
-                      }
-
-                    }else{
-                        //debug print
-                        printf("can not exist this happend\n");
+            }else{
+//                非预热，仿真运行阶段
+                if(MLC_opagemap[blkno].map_status==MAP_REAL){
+                    //命中R-CMT
+                    if(ListLength(ADFTL_Head)!=MAP_REAL_NUM_ENTRIES){
+                        printf(" before ADFTL Hit R CMT error,ListLength is %d,real_arr size is %d\n",ListLength(ADFTL_Head),MAP_REAL_NUM_ENTRIES);
                         assert(0);
                     }
-                }else{
-                    //读请求命中项不做转移操作，但需要做数据访问请求处理
-                    ADFTL_Read_Hit_ClusterCMT_or_SCMT(blkno,operation);
+
+                    ADFTL_Hit_R_CMT(blkno,operation);
+                    if(ListLength(ADFTL_Head)!=MAP_REAL_NUM_ENTRIES){
+                        printf(" after ADFTL Hit R CMT error,ListLength is %d,real_arr size is %d\n",ListLength(ADFTL_Head),MAP_REAL_NUM_ENTRIES);
+                        assert(0);
+                    }
+
+                }else if(MLC_opagemap[blkno].map_status==MAP_SECOND || MLC_opagemap[blkno].map_status==MAP_SEQ){
+
+                    operation_time++;
+                    //只有写请求才可以移动到R-CMT中
+                    if(operation==0){
+                        if(MLC_opagemap[blkno].map_status==MAP_SECOND){
+                            ADFTL_Move_Cluster_CMT_to_RCMT(blkno,operation);
+
+                            if(ListLength(ADFTL_Head)!=MAP_REAL_NUM_ENTRIES){
+                                printf(" after ADFTL_Move_Cluster_CMT_to_RCMT error,ListLength is %d,real_arr size is %d\n",ListLength(ADFTL_Head),MAP_REAL_NUM_ENTRIES);
+                                assert(0);
+                            }
+                        }else if(MLC_opagemap[blkno].map_status==MAP_SEQ){
+                            ADFTL_Move_SCMT_to_RCMT(blkno,operation);
+
+                            if(ListLength(ADFTL_Head)!=MAP_REAL_NUM_ENTRIES){
+                                printf(" after ADFTL_Move_SCMT_to_RCMT error,ListLength is %d,real_arr size is %d\n",ListLength(ADFTL_Head),MAP_REAL_NUM_ENTRIES);
+                                assert(0);
+                            }
+
+                        }else{
+                            //debug print
+                            printf("can not exist this happend\n");
+                            assert(0);
+                        }
+                    }else{
+                        //读请求命中项不做转移操作，但需要做数据访问请求处理
+                        ADFTL_Read_Hit_ClusterCMT_or_SCMT(blkno,operation);
+                    }
+
+
+                } else if((cnt+1)>=THRESHOLD){
+                    // 预取策略
+                    ADFTL_pre_load_entry_into_SCMT(&blkno,&cnt,operation);
+
+                    if(ListLength(ADFTL_Head)!=MAP_REAL_NUM_ENTRIES){
+                        printf(" after ADFTL_pre_load_entry_into_SCMT error,ListLength is %d,real_arr size is %d\n",ListLength(ADFTL_Head),MAP_REAL_NUM_ENTRIES);
+                        assert(0);
+                    }
+
+
+                } else{
+                    //第一次加载的数据到R-CMT中
+                    ADFTL_R_CMT_Is_Full();
+                    load_entry_into_R_CMT(blkno,operation);
+                    if(ListLength(ADFTL_Head)!=MAP_REAL_NUM_ENTRIES){
+                        printf(" after 第一次加载的数据到R-CMT中 error,ListLength is %d,real_arr size is %d\n",ListLength(ADFTL_Head),MAP_REAL_NUM_ENTRIES);
+                        assert(0);
+                    }
                 }
 
-
-            } else if((cnt+1)>=THRESHOLD){
-              // 预取策略
-                ADFTL_pre_load_entry_into_SCMT(&blkno,&cnt,operation);
-
-              if(ListLength(ADFTL_Head)!=MAP_REAL_NUM_ENTRIES){
-                printf(" after ADFTL_pre_load_entry_into_SCMT error,ListLength is %d,real_arr size is %d\n",ListLength(ADFTL_Head),MAP_REAL_NUM_ENTRIES);
-                assert(0);
-              }
-
-
-            } else{
-
-                //第一次加载的数据到R-CMT中
-                ADFTL_R_CMT_Is_Full();
-                load_entry_into_R_CMT(blkno,operation);
-
-              if(ListLength(ADFTL_Head)!=MAP_REAL_NUM_ENTRIES){
-                printf(" after 第一次加载的数据到R-CMT中 error,ListLength is %d,real_arr size is %d\n",ListLength(ADFTL_Head),MAP_REAL_NUM_ENTRIES);
-                assert(0);
-              }
-
             }
+
+
 
 
 
@@ -2829,6 +2840,49 @@ void load_entry_into_R_CMT(int blkno,int operation)
 }
 
 /*****************ADFTL数据预取策略***********************/
+void ADFTL_Warm(int *pageno,int *req_size,int operation)
+{
+//    首先是翻译页的读取,不经过CMT，直接进行预热
+    int blkno=(*pageno),cnt=(*req_size);
+    if(operation==0){
+        send_flash_request(((blkno-MLC_page_num_for_2nd_map_table)/MLC_MAP_ENTRIES_PER_PAGE)*8,8,1,2,1);
+        translation_read_num++;
+        send_flash_request(((blkno-MLC_page_num_for_2nd_map_table)/MLC_MAP_ENTRIES_PER_PAGE)*8,8,0,2,1);
+        translation_write_num++;
+    } else{
+        send_flash_request(((blkno-MLC_page_num_for_2nd_map_table)/MLC_MAP_ENTRIES_PER_PAGE)*8,8,1,2,1);
+        translation_read_num++;
+    }
+
+
+//    其次数据页的读取
+    sequential_count = 0;
+    //之后连续的请求因为映射加载完成直接读取写入操作
+    for(;(cnt>0)&&(sequential_count<NUM_ENTRIES_PER_TIME);cnt--)
+    {
+//        MLC_opagemap[blkno].map_age++;
+//        cache_scmt_hit++;
+        if(operation==0)
+        {
+            write_count++;
+//            MLC_opagemap[blkno].update=1;
+        }
+        else
+            read_count++;
+        send_flash_request(blkno*8,8,operation,1,1);
+        blkno++;
+        rqst_cnt++;
+        sequential_count++;
+    }
+
+    //zhoujie
+    *req_size=cnt;
+    *pageno=blkno;
+
+}
+
+
+
 void ADFTL_pre_load_entry_into_SCMT(int *pageno,int *req_size,int operation)
 {
     int blkno=(*pageno),cnt=(*req_size);

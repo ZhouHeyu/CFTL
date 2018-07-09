@@ -227,6 +227,7 @@ void warmFlash(char *tname){
   else if(ftl_type == 4) {
     write_count = 0; read_count = 0; }
 
+    warm_flag=0;
   fclose(fp);
 }
 
@@ -262,6 +263,7 @@ int main (int argc, char **argv)
     nand_stat_reset();
   }
 
+  warm_flag=1;
  // warmFlashsynth();
   warmFlash(argv[4]);
 //    MywarmFlash();
