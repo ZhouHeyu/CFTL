@@ -719,6 +719,59 @@ static ioreq_event * iotrace_ascii_get_ioreq_event_1 (FILE *tracefile, ioreq_eve
 }
 
 
+static ioreq_event * iotrace_ascii_get_ioreq_event_2 (FILE *tracefile, ioreq_event *new)
+{
+   char line[201];
+   int sbcount,mbcount;
+   if (fgets(line, 200, tracefile) == NULL) {
+      addtoextraq((event *) new);
+      return(NULL);
+   }
+   if (sscanf(line, "%lf %d %d %d %x\n", &new->time, &new->devno, &new->blkno, &new->bcount, &new->flags) != 5) {
+      fprintf(stderr, "Wrong number of arguments for I/O trace event type\n");
+      fprintf(stderr, "line: %s", line);
+      ddbg_assert(0);
+   }
+
+   //flashsim
+   sbcount = ((new->blkno+ new->bcount-1)/4 - (new->blkno)/4 + 1) * 4;
+   mbcount = ((new->blkno+ new->bcount-1)/8 - (new->blkno)/8 + 1) * 8;
+//   小于固定阈值5就直接网SLC写？？
+//   if(new->bcount<=5){
+//      // 4
+//      if(new->blkno>=1048544){
+//         new->blkno=new->blkno-1048544;
+//      }
+//      new->bcount=((new->blkno+ new->bcount-1)/4 - (new->blkno)/4 + 1) * 4;
+//      new->blkno /= 4;
+//      new->blkno *= 4;
+//      new->flash_op_flag=0;
+//   } else{
+//      new->bcount=((new->blkno+ new->bcount-1)/8 - (new->blkno)/8 + 1) * 8;
+//      new->blkno /= 8;
+//      new->blkno *= 8;
+//      new->flash_op_flag=1;
+//   }
+//  直接往MLC写，不存在SLC的数据迁移，单纯比较FTL层算法的性能
+   new->bcount=((new->blkno+new->bcount-1)/8-(new->blkno)/8+1)*8;
+   new->blkno/=8;
+   new->blkno*=8;
+   new->flash_op_flag=1;
+
+   if (new->flags & ASYNCHRONOUS) {
+      new->flags |= (new->flags & READ) ? TIME_LIMITED : 0;
+   } else if (new->flags & SYNCHRONOUS) {
+      new->flags |= TIME_CRITICAL;
+   }
+
+   new->buf = 0;
+   new->opid = 0;
+   new->busno = 0;
+   new->cause = 0;
+   return(new);
+
+}
+
 ioreq_event * iotrace_get_ioreq_event (FILE *tracefile, int traceformat, ioreq_event *temp)
 {
    switch (traceformat) {
