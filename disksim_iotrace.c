@@ -785,7 +785,7 @@ static ioreq_event * iotrace_ascii_get_ioreq_event_2 (FILE *tracefile, ioreq_eve
  * @param new
  * @return
  */
-static ioreq_event * iotrace_ascii_get_ioreq_event_4(FILE *tracefile,ioreq_event *new)
+static ioreq_event * iotrace_ascii_get_ioreq_event_3(FILE *tracefile,ioreq_event *new)
 {
     char line[201];
     int sbcount,mbcount,threhold,diff,Es,Em,sblkno,ssblkno;
@@ -933,11 +933,11 @@ ioreq_event * iotrace_get_ioreq_event (FILE *tracefile, int traceformat, ioreq_e
       
    case ASCII:
       if(IO_trace==0)
-//         temp = iotrace_ascii_get_ioreq_event_0(tracefile, temp);
-           temp = iotrace_ascii_get_ioreq_event_2(tracefile, temp);
+         temp = iotrace_ascii_get_ioreq_event_0(tracefile, temp);
+//           temp = iotrace_ascii_get_ioreq_event_2(tracefile, temp);
       else
-//        temp = iotrace_ascii_get_ioreq_event_1(tracefile, temp);
-           temp = iotrace_ascii_get_ioreq_event_2(tracefile, temp);
+        temp = iotrace_ascii_get_ioreq_event_3(tracefile, temp);
+//           temp = iotrace_ascii_get_ioreq_event_2(tracefile, temp);
       break;
       
    case RAW:
