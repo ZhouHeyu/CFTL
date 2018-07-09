@@ -61,7 +61,7 @@
 #include "flash.h"
 #include "dftl.h"
 
-int warm_flag=1;
+extern int warm_flag;
 void warmFlashsynth(){
 
   memset(dm_table, -1, sizeof(int) * DM_MGR_SIZE);

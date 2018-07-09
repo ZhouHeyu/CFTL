@@ -187,7 +187,7 @@ int *second_arr;
 
 //该头结点的初始化和释放在对应的dftl.h文件中进行
 Node *ADFTL_Head;
-extern int warm_flag;
+int warm_flag;
 
 int big_request_entry;
 int big_request_count;
