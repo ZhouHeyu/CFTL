@@ -60,6 +60,8 @@
 #include "ssd_interface.h"
 #include "flash.h"
 #include "dftl.h"
+
+int warm_flag=1;
 void warmFlashsynth(){
 
   memset(dm_table, -1, sizeof(int) * DM_MGR_SIZE);
