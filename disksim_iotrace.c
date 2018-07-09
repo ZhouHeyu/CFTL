@@ -736,6 +736,9 @@ static ioreq_event * iotrace_ascii_get_ioreq_event_2 (FILE *tracefile, ioreq_eve
    //flashsim
    sbcount = ((new->blkno+ new->bcount-1)/4 - (new->blkno)/4 + 1) * 4;
    mbcount = ((new->blkno+ new->bcount-1)/8 - (new->blkno)/8 + 1) * 8;
+   printf("只采用MLC单一闪存仿真：");
+   printf("SLC磨损速度：%d\n",SLC_stat_erase_num);
+   printf("MLC磨损速度：%d\n",MLC_stat_erase_num);
 //   小于固定阈值5就直接网SLC写？？
 //   if(new->bcount<=5){
 //      // 4
