@@ -155,6 +155,10 @@ int block_entry_num = 0;
 int blocksize = init_size;//LRU块列表中初始块的个数*/
 
 int zhou_flag=0;
+
+/***************新的预热函数*************************/
+void FTL_Warm(int *pageno,int *req_size,int operation);
+
 /***********************************************************************
  *    author: zhoujie
  *  封装 callFsim的代码函数
@@ -228,8 +232,7 @@ int ADFTL_Find_Victim_In_RCMT_W();
 int  Fast_Find_Victim_In_RCMT_W();
 Node *ADFTL_Head=NULL;
 
-/***************新的预热函数*************************/
-void ADFTL_Warm(int *pageno,int *req_size,int operation);
+
 
 /***********************************************************************
  *                    debug function
@@ -959,6 +962,46 @@ void SecnoToPageno(int secno,int scount,int *blkno,int *bcount,int flash_flag)
 		 }
 }
 
+
+void FTL_Warm(int *pageno,int *req_size,int operation)
+{
+//    首先是翻译页的读取,不经过CMT，直接进行预热
+  int blkno=(*pageno),cnt=(*req_size);
+  if(operation==0){
+    send_flash_request(((blkno-MLC_page_num_for_2nd_map_table)/MLC_MAP_ENTRIES_PER_PAGE)*8,8,1,2,1);
+    translation_read_num++;
+    send_flash_request(((blkno-MLC_page_num_for_2nd_map_table)/MLC_MAP_ENTRIES_PER_PAGE)*8,8,0,2,1);
+    translation_write_num++;
+  } else{
+    send_flash_request(((blkno-MLC_page_num_for_2nd_map_table)/MLC_MAP_ENTRIES_PER_PAGE)*8,8,1,2,1);
+    translation_read_num++;
+  }
+
+
+//    其次数据页的读取
+  sequential_count = 0;
+  //之后连续的请求因为映射加载完成直接读取写入操作
+  for(;(cnt>0)&&(sequential_count<NUM_ENTRIES_PER_TIME);cnt--)
+  {
+    if(operation==0)
+    {
+      write_count++;
+    }
+    else
+      read_count++;
+    send_flash_request(blkno*8,8,operation,1,1);
+    blkno++;
+    rqst_cnt++;
+    sequential_count++;
+  }
+
+  //zhoujie
+  *req_size=cnt;
+  *pageno=blkno;
+
+}
+
+
 /***********************************************************************
  *                    DFTL  主函数逻辑实现
  ***********************************************************************/ 
@@ -1017,55 +1060,61 @@ void DFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
         }
         
         rqst_cnt++;
-        // req_entry in  SRAM
-        if((MLC_opagemap[blkno].map_status==MAP_REAL)||(MLC_opagemap[blkno].map_status==MAP_GHOST)){
-          cache_hit++;
-          MLC_opagemap[blkno].map_age++;
-          if(MLC_opagemap[blkno].map_status==MAP_GHOST){
-			  //debug test
-			 // printf("Hit Ghost CMT ,cache_hit %d\n",cache_hit);
+//        预热函数FTL_warm
+        if(warm_flag==1){
+          FTL_Warm(&blkno,&cnt,operation);
+        }else{
+//          结束预热仿真
+          // req_entry in  SRAM
+          if((MLC_opagemap[blkno].map_status==MAP_REAL)||(MLC_opagemap[blkno].map_status==MAP_GHOST)){
+            cache_hit++;
+            MLC_opagemap[blkno].map_age++;
+            if(MLC_opagemap[blkno].map_status==MAP_GHOST){
+              //debug test
+              // printf("Hit Ghost CMT ,cache_hit %d\n",cache_hit);
 
               DFTL_Hit_Ghost_CMT(blkno);
-          }else if(MLC_opagemap[blkno].map_status==MAP_REAL){
-			  // debug test
-			  // printf("Hit Real CMT ,cache_hit %d\n",cache_hit);
+            }else if(MLC_opagemap[blkno].map_status==MAP_REAL){
+              // debug test
+              // printf("Hit Real CMT ,cache_hit %d\n",cache_hit);
               DFTL_Hit_Real_CMT(blkno);
+            }else{
+              // debug
+              printf("forbidden/shouldnt happen real =%d , ghost =%d\n",MAP_REAL,MAP_GHOST);
+            }
+
+            //2. opagemap not in SRAM
           }else{
+            // REAL CMT is FULL
+            DFTL_Real_CMT_Full();
+            //  read entry into REAL
+            flash_hit++;
+            send_flash_request(((blkno-MLC_page_num_for_2nd_map_table)/MLC_MAP_ENTRIES_PER_PAGE)*8,8,1,2,1);
+            translation_read_num++;
+            MLC_opagemap[blkno].map_status=MAP_REAL;
+            MLC_opagemap[blkno].map_age=MLC_opagemap[real_max].map_age+1;
+            real_max=blkno;
+            MAP_REAL_NUM_ENTRIES++;
+            pos=find_free_pos(real_arr,MAP_REAL_MAX_ENTRIES);
             // debug
-            printf("forbidden/shouldnt happen real =%d , ghost =%d\n",MAP_REAL,MAP_GHOST);
+            if(pos == -1){
+              printf("can not find free pos in real_arr for %d LPN",blkno);
+              assert(0);
+            }
+            real_arr[pos]=0;
+            real_arr[pos]=blkno;
           }
 
-          //2. opagemap not in SRAM 
-        }else{
-          // REAL CMT is FULL
-          DFTL_Real_CMT_Full();
-          //  read entry into REAL
-          flash_hit++;
-          send_flash_request(((blkno-MLC_page_num_for_2nd_map_table)/MLC_MAP_ENTRIES_PER_PAGE)*8,8,1,2,1);
-          translation_read_num++;
-          MLC_opagemap[blkno].map_status=MAP_REAL;
-          MLC_opagemap[blkno].map_age=MLC_opagemap[real_max].map_age+1;
-          real_max=blkno;
-          MAP_REAL_NUM_ENTRIES++;
-          pos=find_free_pos(real_arr,MAP_REAL_MAX_ENTRIES);
-          // debug
-          if(pos == -1){
-            printf("can not find free pos in real_arr for %d LPN",blkno);
-            assert(0);
+          // write data or read data to flash
+          if(operation==0){
+            write_count++;
+            MLC_opagemap[blkno].update=1;
+          }else{
+            read_count++;
           }
-          real_arr[pos]=0;
-          real_arr[pos]=blkno;
+          send_flash_request(blkno*8,8,operation,1,1);
+          blkno++;
         }
-
-        // write data or read data to flash
-        if(operation==0){
-          write_count++;
-          MLC_opagemap[blkno].update=1;
-        }else{
-          read_count++;
-        }
-        send_flash_request(blkno*8,8,operation,1,1);
-        blkno++;
       } 
   }
 
@@ -2231,7 +2280,7 @@ void ADFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
 
             if(warm_flag==1){
 //                预热阶段，全部采用预取方式：
-                ADFTL_Warm(&blkno,&cnt,operation);
+                FTL_Warm(&blkno,&cnt,operation);
 
             }else{
 //                非预热，仿真运行阶段
@@ -2301,14 +2350,9 @@ void ADFTL_Scheme(int *pageno,int *req_size,int operation,int flash_flag)
 
             }
 
-
-
-
-
         }
 
     }
-
 
     //syn-value
     (*pageno)=blkno,(*req_size)=cnt;
@@ -2840,46 +2884,7 @@ void load_entry_into_R_CMT(int blkno,int operation)
 }
 
 /*****************ADFTL数据预取策略***********************/
-void ADFTL_Warm(int *pageno,int *req_size,int operation)
-{
-//    首先是翻译页的读取,不经过CMT，直接进行预热
-    int blkno=(*pageno),cnt=(*req_size);
-    if(operation==0){
-        send_flash_request(((blkno-MLC_page_num_for_2nd_map_table)/MLC_MAP_ENTRIES_PER_PAGE)*8,8,1,2,1);
-        translation_read_num++;
-        send_flash_request(((blkno-MLC_page_num_for_2nd_map_table)/MLC_MAP_ENTRIES_PER_PAGE)*8,8,0,2,1);
-        translation_write_num++;
-    } else{
-        send_flash_request(((blkno-MLC_page_num_for_2nd_map_table)/MLC_MAP_ENTRIES_PER_PAGE)*8,8,1,2,1);
-        translation_read_num++;
-    }
 
-
-//    其次数据页的读取
-    sequential_count = 0;
-    //之后连续的请求因为映射加载完成直接读取写入操作
-    for(;(cnt>0)&&(sequential_count<NUM_ENTRIES_PER_TIME);cnt--)
-    {
-//        MLC_opagemap[blkno].map_age++;
-//        cache_scmt_hit++;
-        if(operation==0)
-        {
-            write_count++;
-//            MLC_opagemap[blkno].update=1;
-        }
-        else
-            read_count++;
-        send_flash_request(blkno*8,8,operation,1,1);
-        blkno++;
-        rqst_cnt++;
-        sequential_count++;
-    }
-
-    //zhoujie
-    *req_size=cnt;
-    *pageno=blkno;
-
-}
 
 
 
