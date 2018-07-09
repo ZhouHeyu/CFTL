@@ -778,9 +778,11 @@ ioreq_event * iotrace_get_ioreq_event (FILE *tracefile, int traceformat, ioreq_e
       
    case ASCII:
       if(IO_trace==0)
-         temp = iotrace_ascii_get_ioreq_event_0(tracefile, temp);
+//         temp = iotrace_ascii_get_ioreq_event_0(tracefile, temp);
+           temp = iotrace_ascii_get_ioreq_event_2(tracefile, temp);
       else
-        temp = iotrace_ascii_get_ioreq_event_1(tracefile, temp);
+//        temp = iotrace_ascii_get_ioreq_event_1(tracefile, temp);
+           temp = iotrace_ascii_get_ioreq_event_2(tracefile, temp);
       break;
       
    case RAW:
