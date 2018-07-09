@@ -839,6 +839,7 @@ static ioreq_event * iotrace_ascii_get_ioreq_event_3(FILE *tracefile,ioreq_event
         }
 
 //      计算确定增量
+        printf("The Tau is %f\n",Tau);
         Temp=pow((log(Tau)/log(2))*Amplitude,index_mark);
         printf("the Temp is %f\n",Temp);
         if(Tau>1.0){
@@ -856,7 +857,7 @@ static ioreq_event * iotrace_ascii_get_ioreq_event_3(FILE *tracefile,ioreq_event
         }
 
 //        自适应调整阈值
-        printf("th_add is %d",th_add);
+        printf("th_add is %d\n",th_add);
         th=th+th_add;
         if(th<min_th){
             th=min_th;
